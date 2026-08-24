@@ -1,0 +1,78 @@
+# ==============================================================================
+# 文件夹监控同步脚本 - 配置文件示例
+# 使用方法：
+#   1. 复制此文件为 sync_watch.conf（或其他名称）
+#   2. 修改下方配置项
+#   3. 运行: ./sync_watch.sh -c sync_watch.conf
+# ==============================================================================
+
+# ---------- 基础连接配置 ----------
+
+# 本地待监控文件夹（绝对路径）
+LOCAL_DIR=/Users/yourname/Documents/my-project
+
+# 远程服务器 SSH 配置
+REMOTE_USER=root
+REMOTE_HOST=192.168.1.100
+REMOTE_PORT=22
+
+# 远程目标文件夹路径（绝对路径）
+REMOTE_DIR=/data/my-project
+
+# SSH 私钥路径（留空使用默认 ~/.ssh/id_rsa 或 ssh-agent）
+SSH_KEY=/Users/yourname/.ssh/id_rsa
+
+# ---------- 同步规则配置 ----------
+
+# 是否删除远程存在但本地已删除的文件
+# 警告：设为 true 时，如果本地目录意外清空，远程也会被清空！
+SYNC_DELETE=false
+
+# 是否启用传输压缩（低速网络建议开启）
+SYNC_COMPRESS=true
+
+# 是否输出 rsync 详细日志
+SYNC_VERBOSE=false
+
+# 排除规则（多个用空格分隔，支持 rsync 的 --exclude 格式）
+# 常见临时文件、系统文件、依赖目录建议排除
+EXCLUDE_PATTERNS=.DS_Store .git/ node_modules/ __pycache__/ *.tmp *.swp .idea/ .vscode/ dist/ build/
+
+# ---------- 监控性能配置 ----------
+
+# 去抖时间（秒）：变更发生后等待 N 秒再同步，期间的变更会合并
+# 如果频繁编辑保存文件，建议设为 2-5 秒以减少同步次数
+DEBOUNCE_SECONDS=2
+
+# 最大等待时间（秒）：即使持续有变更，达到此时间也强制同步一次
+MAX_WAIT_SECONDS=10
+
+# fswatch 底层 FSEvents 延迟（秒），一般不需要修改
+FSEVENTS_LATENCY=0.5
+
+# ---------- 启动行为 ----------
+
+# 启动时先执行一次全量同步（建议开启，避免启动期间遗漏的变更）
+FULL_SYNC_ON_START=true
+
+# ---------- 日志配置 ----------
+
+# 日志文件路径（留空则前台运行时输出到终端，后台运行时写入同目录 sync_watch.log）
+# 示例: /Users/yourname/Library/Logs/sync_watch.log
+LOG_FILE=
+
+# 日志级别: DEBUG / INFO / WARN / ERROR
+LOG_LEVEL=INFO
+
+# ---------- 网络重试配置 ----------
+
+# 同步失败重试次数
+RETRY_COUNT=3
+
+# 重试间隔（秒）
+RETRY_INTERVAL=5
+
+# ---------- 高级配置 ----------
+
+# PID 文件目录（留空使用脚本目录下的 .sync_watch_pids/）
+PID_DIR=
