@@ -2,10 +2,12 @@ package com.example.htmlmonitor.server;
 
 import com.example.htmlmonitor.config.ServerConfig;
 import com.example.htmlmonitor.monitor.FileIndex;
+import com.example.htmlmonitor.server.auth.TokenAuthenticator;
 import com.example.htmlmonitor.server.handler.ApiHandler;
 import com.example.htmlmonitor.server.handler.HtmlContentHandler;
 import com.example.htmlmonitor.server.handler.StaticHandler;
 
+import com.sun.net.httpserver.Authenticator;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -49,12 +51,15 @@ public class HttpServerManager {
         InetSocketAddress address = new InetSocketAddress(config.getHost(), config.getPort());
         server = HttpServer.create(address, 0);
 
+        // 机器级访问控制：共享令牌认证器统一挂载，对全部路由生效，业务 handler 无需感知认证逻辑
+        Authenticator auth = new TokenAuthenticator(config);
+
         // 目录树数据接口：前端据此渲染目录结构
-        server.createContext("/api/files", new ApiHandler(index));
+        server.createContext("/api/files", new ApiHandler(index)).setAuthenticator(auth);
         // 原 HTML 内容接口：点击前端目录中的文件后，从这里加载本地 HTML 原样展示
-        server.createContext("/html", new HtmlContentHandler(config.getMonitorDir()));
+        server.createContext("/html", new HtmlContentHandler(config.getMonitorDir())).setAuthenticator(auth);
         // 前端页面
-        server.createContext("/", new StaticHandler());
+        server.createContext("/", new StaticHandler()).setAuthenticator(auth);
 
         // 缓存线程池处理并发请求；服务停止时一并回收
         executor = Executors.newCachedThreadPool();

@@ -30,6 +30,12 @@ public class ServerConfig {
     /** 需要实时监控的本地目录 */
     private Path monitorDir = Paths.get("html-files");
 
+    /** 访问控制开关：为 true 时只有携带有效令牌的机器才能访问服务 */
+    private boolean authEnabled = true;
+
+    /** 机器认证令牌：所有授权机器共享的单一密钥，通过 X-Auth-Token 请求头或 token 查询参数提交 */
+    private String authToken = "xiaohang";
+
     /**
      * 从 classpath 中的 application.properties 加载配置。
      * 支持以 -D 系统属性覆盖文件配置（如 -Dserver.port=9090），
@@ -55,6 +61,11 @@ public class ServerConfig {
         if (!dir.isEmpty()) {
             cfg.monitorDir = Paths.get(dir);
         }
+
+        // 访问控制配置：认证开关与共享令牌，优先级同为 系统属性 > 配置文件 > 默认值
+        cfg.authEnabled = Boolean.parseBoolean(
+                System.getProperty("auth.enabled", props.getProperty("auth.enabled", String.valueOf(cfg.authEnabled))).trim());
+        cfg.authToken = System.getProperty("auth.token", props.getProperty("auth.token", cfg.authToken)).trim();
         return cfg;
     }
 
@@ -79,5 +90,13 @@ public class ServerConfig {
 
     public Path getMonitorDir() {
         return monitorDir;
+    }
+
+    public boolean isAuthEnabled() {
+        return authEnabled;
+    }
+
+    public String getAuthToken() {
+        return authToken;
     }
 }

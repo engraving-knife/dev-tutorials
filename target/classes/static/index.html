@@ -183,10 +183,20 @@
   // 已折叠的第一级卡片（集合），默认全部展开
   const collapsed = new Set();
 
+  // 机器认证令牌：取自 URL 的 ?token= 参数并持久化到 localStorage，
+  // 之后所有请求（接口与打开新窗口）都会带上该令牌
+  const TOKEN = (new URLSearchParams(location.search)).get('token') || localStorage.getItem('htmlmonitor_token') || '';
+  if (TOKEN) localStorage.setItem('htmlmonitor_token', TOKEN);
+
+  // 为 URL 追加令牌查询参数，保证后续请求通过服务端认证
+  function authUrl(url) {
+    return TOKEN ? url + (url.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(TOKEN) : url;
+  }
+
   // 从后端拉取两级目录数据
   async function loadTree() {
     try {
-      const res = await fetch('/api/files', { cache: 'no-store' });
+      const res = await fetch(authUrl('/api/files'), { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       renderTree(data);
@@ -266,8 +276,8 @@
       if (collapsed.has(path)) collapsed.delete(path); else collapsed.add(path);
       loadTree();
     } else {
-      // 在新窗口打开该 HTML 教程（原样展示本地内容）
-      window.open('/html/' + encodePath(target.dataset.path), '_blank');
+      // 在新窗口打开该 HTML 教程（原样展示本地内容），并携带认证令牌
+      window.open(authUrl('/html/' + encodePath(target.dataset.path)), '_blank');
     }
   });
 
