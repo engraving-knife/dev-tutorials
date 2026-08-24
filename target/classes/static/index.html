@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>面向开发者的教程</title>
+<style>
+  /* ============ 全局与背景 ============ */
+  /* 明亮清新的渐变配色：以浅青、淡紫、柔粉三组径向渐变叠加，营造通透轻盈的氛围 */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: #33406a;
+    background:
+      radial-gradient(1100px 700px at 10% -12%, rgba(103, 232, 249, .55), transparent 60%),
+      radial-gradient(1000px 720px at 102% 2%, rgba(196, 181, 253, .6), transparent 55%),
+      radial-gradient(900px 680px at 48% 112%, rgba(253, 186, 200, .5), transparent 60%),
+      linear-gradient(135deg, #eff9ff 0%, #f3efff 48%, #fff4f8 100%);
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ============ 顶部大标题区（玻璃拟态） ============ */
+  header {
+    margin: 20px 24px 0;
+    padding: 44px 40px 36px;
+    border-radius: 26px;
+    background: rgba(255, 255, 255, .55);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .85);
+    box-shadow: 0 10px 40px rgba(99, 102, 241, .12);
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .kicker {
+    display: inline-block;
+    font-size: 12px; font-weight: 700; letter-spacing: 4px;
+    color: #8b6cf6;
+    background: rgba(139, 108, 246, .1);
+    border: 1px solid rgba(139, 108, 246, .22);
+    padding: 6px 16px; border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  header h1 {
+    font-size: 46px; font-weight: 800; letter-spacing: 1px; line-height: 1.25;
+    background: linear-gradient(120deg, #3b82f6 0%, #7c6cf6 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  header .subtitle {
+    margin-top: 14px;
+    font-size: 15px; color: #8a93b8;
+  }
+  .actions {
+    margin-top: 26px;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+  }
+  .badge {
+    font-size: 12px; color: #0e9f6e;
+    background: rgba(46, 204, 139, .12);
+    border: 1px solid rgba(46, 204, 139, .3);
+    padding: 5px 12px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, .2); }
+  .status { font-size: 12px; color: #8a93b8; }
+  button {
+    padding: 9px 18px;
+    border: none; border-radius: 12px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    color: #fff;
+    background: linear-gradient(135deg, #5aa7ff, #8b6cf6);
+    box-shadow: 0 6px 16px rgba(102, 132, 255, .35);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  button:hover { transform: translateY(-1px); box-shadow: 0 9px 20px rgba(102, 132, 255, .45); }
+  button:active { transform: translateY(0); }
+
+  /* ============ 主体：教程列表（与标题等宽） ============ */
+  /* main 与 header 使用相同的左右 24px 边距，使教程列表与标题模块宽度一致 */
+  .main {
+    flex: 1; min-height: 0;
+    padding: 20px 24px 24px;
+    flex-shrink: 0;
+  }
+  /* 列表总标题栏 */
+  .list-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 4px 16px;
+  }
+  .list-head .title { font-size: 16px; font-weight: 700; color: #2a3563; }
+  .list-head .count {
+    font-size: 12px; font-weight: 500; color: #8a93b8;
+    background: rgba(255, 255, 255, .7);
+    border-radius: 999px; padding: 4px 12px;
+  }
+
+  /* 每个一级子目录一个独立玻璃拟态卡片 */
+  .card {
+    border-radius: 22px;
+    background: rgba(255, 255, 255, .55);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, .85);
+    box-shadow: 0 10px 40px rgba(99, 102, 241, .12);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .card-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 22px;
+    cursor: pointer; user-select: none;
+    transition: background .2s ease;
+  }
+  .card-head:hover { background: rgba(255, 255, 255, .35); }
+  .card-head .folder-icon {
+    width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+    background: linear-gradient(135deg, #b7e6ff, #c9b8ff);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6);
+  }
+  .card-head .g-name { flex: 1; font-size: 15px; font-weight: 700; color: #2a3563; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-head .g-count {
+    font-size: 12px; color: #8a93b8;
+    background: rgba(255, 255, 255, .85);
+    border-radius: 999px; padding: 3px 10px; flex-shrink: 0;
+  }
+  .card-head .chev { color: #a5adcc; font-size: 12px; transition: transform .2s ease; flex-shrink: 0; }
+  .card.open .chev { transform: rotate(90deg); }
+
+  /* 第二级 HTML 文件列表 */
+  .files { padding: 2px 12px 14px; display: none; }
+  .card.open .files { display: block; }
+  .file-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; margin-top: 4px;
+    border-radius: 12px; cursor: pointer;
+    transition: background .15s ease, transform .15s ease;
+  }
+  .file-row:hover { background: rgba(255, 255, 255, .8); transform: translateX(2px); }
+  .file-row .file-icon { font-size: 15px; width: 22px; text-align: center; flex-shrink: 0; }
+  .file-row .f-name { flex: 1; font-size: 13px; color: #3d4a7a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-row .f-size { font-size: 11px; color: #a5adcc; flex-shrink: 0; }
+  .file-row .open-tip { font-size: 11px; color: #a5adcc; flex-shrink: 0; opacity: 0; transition: opacity .15s ease; }
+  .file-row:hover .open-tip { opacity: 1; }
+
+  .empty-hint { color: #a5adcc; font-size: 13px; text-align: center; padding: 30px 0; }
+</style>
+</head>
+<body>
+
+<!-- 顶部大标题：展现这是一个针对开发者的教程 -->
+<header>
+  <span class="kicker">DEVELOPER TUTORIALS</span>
+  <h1>面向开发者的教程</h1>
+  <p class="subtitle">精选 HTML 教程合集 · 与本地目录实时同步 · 点击文件名即可在新窗口打开教程</p>
+  <div class="actions">
+    <span class="badge"><span class="dot"></span>实时监听中</span>
+    <span class="status" id="status"></span>
+    <button id="refreshBtn">立即刷新</button>
+  </div>
+</header>
+
+<!-- 主体：教程列表（每个一级子目录一个独立卡片） -->
+<div class="main">
+  <div class="list-head">
+    <span class="title">教程列表</span>
+    <span class="count" id="totalCount">0 篇</span>
+  </div>
+  <div id="tree"></div>
+</div>
+
+<script>
+(function () {
+  const treeEl = document.getElementById('tree');
+  const statusEl = document.getElementById('status');
+  const totalCountEl = document.getElementById('totalCount');
+
+  // 已折叠的第一级卡片（集合），默认全部展开
+  const collapsed = new Set();
+
+  // 从后端拉取两级目录数据
+  async function loadTree() {
+    try {
+      const res = await fetch('/api/files', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      renderTree(data);
+      statusEl.textContent = '更新于 ' + new Date().toLocaleTimeString();
+    } catch (e) {
+      statusEl.textContent = '获取目录失败: ' + e.message;
+    }
+  }
+
+  // 渲染教程列表：每个一级子目录渲染为一个独立的玻璃拟态卡片
+  function renderTree(root) {
+    treeEl.innerHTML = '';
+    if (!root || !root.children || !root.children.length) {
+      treeEl.appendChild(emptyHint('当前目录下暂无教程'));
+      totalCountEl.textContent = '0 篇';
+      return;
+    }
+
+    let total = 0;
+    root.children.forEach(function (group) {
+      if (!group.children) return;
+      total += group.children.length;
+      treeEl.appendChild(buildCard(group));
+    });
+    totalCountEl.textContent = total + ' 篇';
+  }
+
+  // 构建一个一级子目录对应的独立卡片
+  function buildCard(group) {
+    const isOpen = !collapsed.has(group.path);
+    const card = document.createElement('div');
+    card.className = 'card' + (isOpen ? ' open' : '');
+    card.dataset.path = group.path;
+
+    // 卡片头部：目录名 + 文件数 + 折叠箭头
+    const head = document.createElement('div');
+    head.className = 'card-head';
+    head.dataset.type = 'dir';
+    head.innerHTML = '<span class="folder-icon">&#128193;</span>' +
+      '<span class="g-name" title="' + escapeHtml(group.path || group.name) + '">' + escapeHtml(group.name) + '</span>' +
+      '<span class="g-count">' + group.children.length + ' 篇</span>' +
+      '<span class="chev">&#9656;</span>';
+    card.appendChild(head);
+
+    // 第二级：该目录下的 HTML 文件列表
+    const files = document.createElement('div');
+    files.className = 'files';
+    group.children.forEach(function (file) {
+      files.appendChild(buildFileRow(file));
+    });
+    card.appendChild(files);
+    return card;
+  }
+
+  // 构建一个第二级 HTML 文件行
+  function buildFileRow(file) {
+    const row = document.createElement('div');
+    row.className = 'file-row';
+    row.dataset.path = file.path;
+    row.dataset.type = 'file';
+    row.title = '打开: ' + file.path;
+    row.innerHTML = '<span class="file-icon">&#128196;</span>' +
+      '<span class="f-name">' + escapeHtml(file.name) + '</span>' +
+      '<span class="f-size">' + formatSize(file.size) + '</span>' +
+      '<span class="open-tip">在新窗口打开 &#8599;</span>';
+    return row;
+  }
+
+  // 点击事件委托：卡片头部折叠/展开，文件行在新窗口打开教程
+  treeEl.addEventListener('click', function (e) {
+    const target = e.target.closest('.card-head, .file-row');
+    if (!target) return;
+
+    if (target.classList.contains('card-head')) {
+      // 切换卡片的折叠状态
+      const path = target.parentElement.dataset.path;
+      if (collapsed.has(path)) collapsed.delete(path); else collapsed.add(path);
+      loadTree();
+    } else {
+      // 在新窗口打开该 HTML 教程（原样展示本地内容）
+      window.open('/html/' + encodePath(target.dataset.path), '_blank');
+    }
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', loadTree);
+
+  // 每 3 秒自动轮询一次，实时反映本地目录变化
+  setInterval(loadTree, 3000);
+
+  // 空状态提示
+  function emptyHint(text) {
+    const div = document.createElement('div');
+    div.className = 'empty-hint';
+    div.textContent = text;
+    return div;
+  }
+
+  // 将文件大小格式化为人类可读文本
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  // 按路径分段编码，保证中文/特殊字符路径可安全拼接进 URL
+  function encodePath(path) {
+    return path.split('/').map(encodeURIComponent).join('/');
+  }
+
+  // HTML 转义，防止文件名中的特殊字符破坏页面结构
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  loadTree();
+})();
+</script>
+</body>
+</html>

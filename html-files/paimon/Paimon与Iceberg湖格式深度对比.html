@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paimon 与 Iceberg 湖格式深度对比 · 湖仓选型指南</title>
+<style>
+  :root {
+    --ink: #1e2a4a;
+    --muted: #5c6b8a;
+    --g1: #5ee7df;
+    --g2: #b490ca;
+    --g3: #75e0a2;
+    --g4: #f6b95f;
+    --g5: #82aaff;
+    --r-paimon: #34d399;
+    --r-iceberg: #60a5fa;
+    --r-tc: #f472b6;
+    --glass: rgba(255,255,255,.62);
+    --glass-bd: rgba(255,255,255,.75);
+    --shadow: 0 20px 50px -20px rgba(80,110,180,.35);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    line-height: 1.75;
+    background:
+      radial-gradient(1200px 700px at 8% -5%, rgba(94,231,223,.40), transparent 60%),
+      radial-gradient(1100px 700px at 105% 8%, rgba(240,145,205,.32), transparent 55%),
+      radial-gradient(900px 600px at 50% 118%, rgba(130,170,255,.30), transparent 55%),
+      linear-gradient(160deg, #f4f9ff 0%, #eef4fe 45%, #f4f2ff 100%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    opacity: .5;
+    background-image: radial-gradient(rgba(40,70,130,.04) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .wrap { position: relative; z-index: 1; max-width: 1060px; margin: 0 auto; padding: 0 26px 90px; }
+
+  /* ── Hero ── */
+  .hero {
+    text-align: center; padding: 84px 0 46px;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    color: #2e6b6b; background: rgba(94,231,223,.22);
+    border: 1px solid rgba(94,231,223,.5); backdrop-filter: blur(6px);
+    letter-spacing: .04em;
+  }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: linear-gradient(120deg,#34d399,#60a5fa); box-shadow: 0 0 8px rgba(94,231,223,.9); }
+  .hero h1 {
+    font-size: clamp(30px, 5.2vw, 52px); line-height: 1.2; margin: 22px 0 14px; letter-spacing: .01em;
+    background: linear-gradient(120deg, #0db2a6 0%, #4f7de0 45%, #b356d6 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .sub { max-width: 700px; margin: 0 auto; color: var(--muted); font-size: 16.5px; }
+  .specs {
+    display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 30px 0 4px;
+  }
+  .spec {
+    padding: 10px 20px; border-radius: 16px; font-size: 14px; font-weight: 500;
+    background: var(--glass); border: 1px solid var(--glass-bd); backdrop-filter: blur(10px);
+    box-shadow: var(--shadow); color: #40537a;
+  }
+  .spec b { color: var(--ink); }
+
+  /* ── Section shell ── */
+  section { margin-top: 66px; }
+  .kicker { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #8a9cc4; margin-bottom: 6px; }
+  h2.sec {
+    font-size: clamp(22px, 3vw, 30px); margin: 0 0 8px;
+    background: linear-gradient(120deg,#128277,#4f7de0 60%,#a855d6);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .sec-msg { color: var(--muted); margin: 0 0 26px; font-size: 15px; }
+
+  /* ── Glass cards & grids ── */
+  .grid { display: grid; gap: 20px; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .card {
+    background: var(--glass); border: 1px solid var(--glass-bd);
+    backdrop-filter: blur(14px); border-radius: 22px; padding: 24px 26px;
+    box-shadow: var(--shadow); transition: transform .3s ease, box-shadow .3s ease;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 26px 58px -22px rgba(80,110,180,.45); }
+  .card h3 { margin: 0 0 12px; font-size: 19px; display: flex; align-items: center; gap: 10px; }
+  .card p, .card li { color: #3d4d70; font-size: 15px; }
+  .card ul { margin: 8px 0 0; padding-left: 20px; }
+  .card li { margin-bottom: 8px; }
+
+  .dot { width: 11px; height: 11px; border-radius: 4px; flex: none; }
+  .dot.paimon { background: linear-gradient(135deg,#34d399,#0ea5e9); }
+  .dot.iceberg{ background: linear-gradient(135deg,#60a5fa,#8b5cf6); }
+  .dot.tc     { background: linear-gradient(135deg,#f472b6,#fb923c); }
+  .dot.neutral{ background: linear-gradient(135deg,#8a9cc4,#c3cdea); }
+
+  /* ── Tree diagram ── */
+  .trees { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px,1fr)); gap: 20px; }
+  .tree {
+    background: var(--glass); border: 1px solid var(--glass-bd); backdrop-filter: blur(14px);
+    border-radius: 22px; padding: 24px 24px 20px; box-shadow: var(--shadow);
+  }
+  .tree h4 { margin: 0 0 14px; font-size: 17px; display: flex; align-items: center; gap: 9px; }
+  pre.code {
+    font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: 12.6px; line-height: 1.75; color: #31456b; margin: 0;
+    background: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.7);
+    border-radius: 14px; padding: 16px 16px; overflow-x: auto;
+    white-space: pre;
+  }
+  pre.code .c { color: #98a7c9; }        /* comment */
+  pre.code .k { color: #0ea5a0; font-weight: 600; } /* dir */
+  pre.code .f { color: #7c5bd6; }        /* file */
+  .tree .note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+  /* ── Comparison table ── */
+  .tbl-wrap {
+    background: var(--glass); border: 1px solid var(--glass-bd); backdrop-filter: blur(14px);
+    border-radius: 22px; padding: 6px; box-shadow: var(--shadow); overflow-x: auto;
+  }
+  table.compare { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14.2px; }
+  table.compare th, table.compare td { padding: 14px 18px; text-align: left; vertical-align: top; }
+  table.compare thead th {
+    font-size: 13px; letter-spacing: .08em; color: #ffff; font-weight: 700;
+  }
+  table.compare thead th.dim { background: linear-gradient(120deg,#7b91c7,#8fa6e0); }
+  table.compare thead th.p   { background: linear-gradient(120deg,#0fb98e,#2bb3a8); }
+  table.compare thead th.i   { background: linear-gradient(120deg,#3f86e0,#6a5cd6); }
+  table.compare tbody tr:nth-child(odd) { background: rgba(255,255,255,.35); }
+  table.compare tbody tr:hover { background: rgba(120,170,255,.12); }
+  table.compare tbody td { border-top: 1px solid rgba(120,140,190,.16); color: #3d4d70; }
+  table.compare tbody td:first-child { font-weight: 600; color: var(--ink); white-space: nowrap; }
+
+  /* decision matrix */
+  .matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width:760px){ .matrix{ grid-template-columns:1fr; } }
+  .matrix .col { border-radius: 22px; padding: 26px; box-shadow: var(--shadow); backdrop-filter: blur(14px); }
+  .m-p { background: linear-gradient(160deg, rgba(52,211,153,.22), rgba(14,165,233,.16)); border:1px solid rgba(52,211,153,.45); }
+  .m-i { background: linear-gradient(160deg, rgba(96,165,250,.22), rgba(139,92,246,.18)); border:1px solid rgba(96,165,250,.5); }
+  .matrix h3 { margin: 0 0 4px; font-size: 21px; display:flex; align-items:center; gap:10px; }
+  .matrix .tagline { font-size: 14px; color: var(--muted); margin: 0 0 14px; }
+  .matrix ul { margin: 0; padding-left: 2px; list-style: none; }
+  .matrix li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; font-size: 14.8px; color:#33415e; border-bottom:1px dashed rgba(120,140,190,.2); }
+  .matrix li .num { font-weight:700; font-size:13px; width:22px; flex:none; text-align:center; border-radius:6px; padding:1px 0; }
+  .matrix .m-p li .num { background:#34d399; color:#fff; }
+  .matrix .m-i li .num { background:#60a5fa; color:#fff; }
+
+  .verdict {
+    margin-top: 66px; padding: 34px 36px; border-radius: 26px; text-align: center;
+    background: linear-gradient(120deg, rgba(52,211,153,.16), rgba(130,170,255,.16), rgba(244,114,182,.14));
+    border: 1px solid rgba(255,255,255,.7); backdrop-filter: blur(16px); box-shadow: var(--shadow);
+  }
+  .verdict h2 { margin: 0 0 14px; font-size: 26px; color: var(--ink); }
+  .verdict p { color:#3d4d70; font-size: 16px; max-width: 800px; margin: 0 auto; }
+
+  /* chips & tags */
+  .tags { display:flex; flex-wrap:wrap; gap:8px; margin-top: 12px; }
+  .tag { font-size: 12.5px; padding: 4px 12px; border-radius: 999px; font-weight:600; }
+  .tag.p  { background: rgba(52,211,153,.18); color:#0a8f6a; }
+  .tag.i  { background: rgba(96,165,250,.18); color:#2b63c4; }
+  .tag.t  { background: rgba(244,114,182,.18); color:#c1448f; }
+
+  .foot { text-align:center; color:#98a7c9; font-size:13px; margin-top: 60px; }
+
+  /* scroll nav */
+  nav.toc {
+    position: sticky; top: 16px; z-index: 5; margin: -20px 0 40px;
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  }
+  nav.toc a {
+    text-decoration: none; font-size: 13px; font-weight: 600; color: #40537a;
+    background: var(--glass); border: 1px solid var(--glass-bd); backdrop-filter: blur(10px);
+    padding: 7px 15px; border-radius: 999px; box-shadow: 0 8px 20px -12px rgba(80,110,180,.4);
+  }
+  nav.toc a:hover { background: rgba(120,170,255,.2); }
+
+  @media (max-width:640px){ .wrap{ padding:0 16px 60px;} .hero{padding-top:60px;} }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero">
+    <span class="pill"><i></i> Lakehouse Table Formats · 湖仓表格式研究</span>
+    <h1>Paimon × Iceberg<br>湖格式深度对比与选型指南</h1>
+    <p class="sub">从存储结构到批流一体，从 CDC 实时入湖到多引擎离线分析 —— 厘清两种主流开放表格式的差异，并剖析 TC Iceberg 对标 Iceberg 的改进路径。</p>
+    <div class="specs">
+      <span class="spec">调研版本 · <b>Paimon 1.x / Iceberg V3</b></span>
+      <span class="spec">关注维度 · <b>存储结构与适用场景</b></span>
+      <span class="spec">日期 · <b>2026-08</b></span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#overview">核心定位</a>
+    <a href="#structure">存储结构</a>
+    <a href="#ability">能力对比</a>
+    <a href="#scenario">适用场景</a>
+    <a href="#tciceberg">TC Iceberg 改进</a>
+    <a href="#decision">选型建议</a>
+  </nav>
+
+  <!-- 01 核心定位 -->
+  <section id="overview">
+    <div class="kicker">01 · 身份与哲学</div>
+    <h2 class="sec">两种不同的湖上世界观</h2>
+    <p class="sec-msg">Iceberg 把自己定位成「开放表格式（metadata over files）」，Paimon 则把自己定位成「流式原生数据湖存储（introducing LSM-tree to the lake）」。定位之差，决定了后续几乎所有能力的分野。</p>
+    <div class="grid g2">
+      <div class="card">
+        <h3><span class="dot iceberg"></span>Apache Iceberg</h3>
+        <p>源自 Netflix，2020 年成为 Apache 顶级项目。以 <b>metadata 树</b>（metadata / snapshot / manifest list / manifest）为核心，把 Parquet、ORC 等数据文件组织成可事务化、可时间旅行、可被多引擎同时读写的大表。</p>
+        <p>对外观感近似「<b>图书馆归档系统</b>」：每次写入生成新快照，强调开放、中立、跨引擎兼容与数据治理。</p>
+        <div class="tags">
+          <span class="tag i">多引擎</span><span class="tag i">快照治理</span><span class="tag i">开放格式</span><span class="tag i">批量分析成熟</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3><span class="dot paimon"></span>Apache Paimon</h3>
+        <p>起源于阿里 Flink Table Store，2024 年成为 Apache 顶级项目。把 <b>LSM-tree、主键表、批量 compaction、原生 changelog</b> 引入数据湖，让「表」更像一个流式数据库。</p>
+        <p>对外观感近似「<b>超市生鲜货架</b>」：新数据先入内存再刷盘排序，后台合并收敛，实时数据尽快可见，天然贴近 Flink 生态。</p>
+        <div class="tags">
+          <span class="tag p">CDC 实时入湖</span><span class="tag p">流批一体</span><span class="tag p">LSM / 更新友好</span><span class="tag p">Flink 集成</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 存储结构 -->
+  <section id="structure">
+    <div class="kicker">02 · 存储结构</div>
+    <h2 class="sec">元数据树 vs LSM-Tree：存储内核的分野</h2>
+    <p class="sec-msg">两者都基于对象存储 + 列式数据文件，但「如何管理文件、如何表达变更」的思路截然不同——这是本次对比最关键的工程差异。</p>
+
+    <div class="trees">
+      <!-- Iceberg -->
+      <div class="tree">
+        <h4><span class="dot iceberg"></span>Iceberg · Metadata Tree（元数据树）</h4>
+<pre class="code">&lt;table_path&gt;/
+ ├─ <span class="k">metadata/</span>
+ │   ├─ <span class="f">version-hint.text</span>      <span class="c"># 当前根元数据指针</span>
+ │   ├─ <span class="f">v2.metadata.json</span> <span class="c"># 根元数据（schema/分区/snapshot history）</span>
+ │   ├─ <span class="k">snapshots/</span>
+ │   │   └─ <span class="f">snap-xxx.json</span>
+ │   ├─ <span class="k">manifest-lists/</span>
+ │   │   └─ <span class="f">snap-xxx-m.avro</span>   <span class="c"># 一快照 → 一 manifest list</span>
+ │   └─ <span class="k">manifests/</span>
+ │       └─ <span class="f">uuid.avro</span>          <span class="c"># 记录数据文件 + 列 min/max 统计</span>
+ └─ <span class="k">data/</span>
+     └─ <span class="f">xxx.parquet</span>  <span class="c">（可按分区目录组织）</span>
+ <span class="c">v2/v3：delete files / Puffin deletion vector</span></pre>
+        <p class="note">核心思想：<b>只描述「当前快照包含哪些文件」</b>。快照之间复用 manifest，删除用 delete file / deletion vector（Roaring Bitmap）增量表达，读取时 merge。</p>
+      </div>
+
+      <!-- Paimon -->
+      <div class="tree">
+        <h4><span class="dot paimon"></span>Paimon · Bucket-LSM（分桶 LSM 树）</h4>
+<pre class="code">&lt;table_path&gt;/
+ ├─ <span class="k">schema/</span>      <span class="f">schema-0..n</span>  <span class="c"># 表结构演进</span>
+ ├─ <span class="k">snapshot/</span>    <span class="f">snapshot-1..n</span> + <span class="f">LATEST</span>
+ ├─ <span class="k">manifest/</span>    <span class="f">manifest-list / manifest-##</span>
+ ├─ <span class="k">tag/</span>         <span class="f">tag-release_v1</span>   <span class="c"># 命名快照，长期保留</span>
+ └─ <span class="k">dt=2026/</span>                     <span class="c"># 分区层</span>
+     ├─ <span class="k">bucket-0/</span>                 <span class="c"># 一棵独立 LSM 树</span>
+     │   ├─ <span class="f">sorted-run.parquet</span>
+     │   └─ <span class="f">changelog.parquet</span>      <span class="c"># 变更日志</span>
+     └─ <span class="k">bucket-1/</span>
+         └─ <span class="f">...</span></pre>
+        <p class="note">核心思想：主键表 <b>每桶一棵 LSM-tree</b>。新数据 → 内存 buffer → 按主键排序刷盘成 sorted run → 后台 compaction 合并收敛并处理更新/删除。</p>
+      </div>
+    </div>
+
+    <div class="tbl-wrap" style="margin-top:22px;">
+      <table class="compare">
+        <thead>
+          <tr><th class="dim">存储结构维度</th><th class="p">Apache Paimon</th><th class="i">Apache Iceberg</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>自我定位</td><td>流式数据湖存储，自带存储引擎逻辑</td><td>开放表格式（metadata over files）</td></tr>
+          <tr><td>核心存储模型</td><td>主键表 = 分桶 LSM-tree，非主键表 = append-only</td><td>数据文件（Parquet/ORC）+ metadata 树</td></tr>
+          <tr><td>顶层元数据</td><td>schema 文件（记录表结构演进）</td><td>vN.metadata.json（schema/分区/snapshot history）</td></tr>
+          <tr><td>快照层</td><td>snapshot 文件 + manifest 记录数据/bucket 信息</td><td>snapshot → manifest list(L2) → manifest(L1) 两级结构</td></tr>
+          <tr><td>数据索引</td><td>分区 → bucket 两层索引；支持 B-Tree / Bitmap / 向量索引</td><td>manifest 内列 min/max + 分区裁剪 + page index + V3 DV</td></tr>
+          <tr><td>更新/删除表达</td><td>LSM merge engine（dedup / partial-update / aggregation），mor / cow / mow</td><td>v2 copy-on-write、merge-on-read；v3 deletion vector（Roaring Bitmap）</td></tr>
+          <tr><td>变更流</td><td>原生 changelog（+I / -U / +U / -D），下游可流式直接消费</td><td>无原生连续 changelog，靠 snapshot 增量读 / delete 文件 + delta</td></tr>
+          <tr><td>文件合并</td><td>bucket 内 compaction 合并 sorted run</td><td>快照复用 manifest，写放大由 DV / MoR 权衡</td></tr>
+          <tr><td>命名快照 / 时间旅行</td><td>Tag 机制，独立于过期策略长期保留</td><td>snapshot + branch / tag，治理链路成熟</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 03 能力对比 -->
+  <section id="ability">
+    <div class="kicker">03 · 核心能力</div>
+    <h2 class="sec">写入、更新、并发：谁更能打？</h2>
+    <p class="sec-msg">一句话概括：<b>追加与多引擎分析 Iceberg 更稳，高频更新与实时 CDC 场景 Paimon 更顺手</b>。</p>
+    <div class="grid g2">
+      <div class="card">
+        <h3><span class="dot neutral"></span>写入路径</h3>
+        <ul>
+          <li><b>Iceberg</b>：直接写 Parquet/ORC 并更新 manifest/metadata，追加与批量摄入稳定；高频更新依赖 MoR / deletion vector，写放大可控但需运维 delete 文件。</li>
+          <li><b>Paimon</b>：先入内存 buffer → 排序刷盘成 sorted run → 后台 compaction 收敛，天然适合连续 UPSERT，毫秒到秒级可见。</li>
+          <li><b>取舍</b>：Paimon 需关注 compaction 资源与 bucket 调优；Iceberg 需关注 delete 累积与小文件治理。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="dot neutral"></span>读取路径</h3>
+        <ul>
+          <li><b>批量分析</b>：Iceberg 在 Trino / Spark / DuckDB 生态更成熟；Paimon 亦可，但深度略逊。</li>
+          <li><b>实时流读</b>：Paimon changelog 直接喂给下游 Flink 形成链式管道；Iceberg 需自行处理增量快照合并。</li>
+          <li><b>点查</b>：Paimon 的分桶 + LSM 对主键点查友好。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="dot neutral"></span>事务与并发</h3>
+        <ul>
+          <li>两者都依赖「原子切换快照指针」获得 ACID 与快照隔离；支持时间旅行与回滚。</li>
+          <li><b>Paimon</b>：并发写按 bucket 收敛，不同 bucket 可序列化，同 bucket 为快照隔离。</li>
+          <li><b>Iceberg</b>：多 writer 通过 snapshot / metadata 提交协调，成熟度更高。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="dot neutral"></span>生态与治理</h3>
+        <ul>
+          <li><b>Iceberg</b>：多引擎（Spark / Flink / Trino / Dremio / Snowflake…）、丰富治理工具与 AGPL/ASL 生态，跨团队共享与合规审计首选。</li>
+          <li><b>Paimon</b>：Flink 集成为核心优势，跨引擎支持持续增强但广度、成熟度弱于 Iceberg。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 适用场景 -->
+  <section id="scenario">
+    <div class="kicker">04 · 适用场景</div>
+    <h2 class="sec">什么时候用 Paimon，什么时候用 Iceberg？</h2>
+    <p class="sec-msg">选型不是「谁更好」，而是「谁的模型匹配你的写入形态」。下面两个矩阵可直接对照你的场景。</p>
+
+    <div class="matrix">
+      <div class="col m-p">
+        <h3><span class="dot paimon"></span>优先选 Paimon</h3>
+        <p class="tagline">写入侧高变动 · 引擎侧重 Flink · 实时性要求高</p>
+        <ul>
+          <li><span class="num">1</span><span><b>CDC 实时入湖</b>：MySQL / PG / Kafka 变更需秒级可见。</span></li>
+          <li><span class="num">2</span><span><b>实时特征 / 风控</b>：低延迟点查 + 高频更新。</span></li>
+          <li><span class="num">3</span><span><b>主键表频繁 UPSERT</b>：LSM 与 merge engine 天然承接。</span></li>
+          <li><span class="num">4</span><span><b>Flink 流批一体</b>：同一套任务读写流批数据。</span></li>
+          <li><span class="num">5</span><span><b>实时聚合 / 物化视图</b>：aggregation merge engine + changelog 链式消费。</span></li>
+          <li><span class="num">6</span><span><b>实时报表看板</b>：需流式数据持续刷新。</span></li>
+        </ul>
+      </div>
+      <div class="col m-i">
+        <h3><span class="dot iceberg"></span>优先选 Iceberg</h3>
+        <p class="tagline">读取侧重分析 · 多引擎协作 · 低频更新 · 治理优先</p>
+        <ul>
+          <li><span class="num">1</span><span><b>多引擎协作</b>：Spark / Trino / Dremio / DuckDB / Snowflake 混用。</span></li>
+          <li><span class="num">2</span><span><b>PB 级离线分析</b>：大规模 batch analytics 成熟场景。</span></li>
+          <li><span class="num">3</span><span><b>合规与审计</b>：时间旅行、快照保留、回滚能力强。</span></li>
+          <li><span class="num">4</span><span><b>跨团队数据共享</b>：开放格式生态与治理工具丰富。</span></li>
+          <li><span class="num">5</span><span><b>Schema 频繁演进</b>：field ID 机制 + 长期治理友好。</span></li>
+          <li><span class="num">6</span><span><b>中低频更新</b>：CoW / MoR / DV 处理，非高频 CDC。</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3><span class="dot neutral"></span>混合架构 · Paimon + Iceberg 双湖</h3>
+      <p>许多团队采用「双湖」：<b>实时层用 Paimon</b> 承接 CDC、实时特征与实时聚合；<b>分析层用 Iceberg</b> 沉淀历史与冷数据，服务多引擎分析与合规治理。热数据在实时层流动，冷数据在分析层沉淀，各取所长。</p>
+    </div>
+  </section>
+
+  <!-- 05 TC Iceberg -->
+  <section id="tciceberg">
+    <div class="kicker">05 · 深度专题</div>
+    <h2 class="sec">TC Iceberg：腾讯云给 Iceberg 的「补强」</h2>
+    <p class="sec-msg"><b>TC Iceberg</b> 是腾讯云基于 Apache Iceberg 的非侵入式扩展，主要服务其 DLC（数据湖计算）与 TCLake 产品，兼容 Iceberg V1/V2 表格式。它的改进方向，恰好回应了 Iceberg 在「实时更新」上的短板——而不少设计思路与 Paimon 高度神似。</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3><span class="dot tc"></span>核心：Base Store + Change Store 双表</h3>
+        <p>有主键表由两张独立 Iceberg 表组成：<b>Base Store</b> 存存量数据（Insert + Position Delete File），<b>Change Store</b> 专放实时增量（Flink 写入，可过期清理）。读取时 Merge-on-Read 合并两者提供分钟级分析。</p>
+        <p class="note" style="margin-top:8px;">这相当于用两张表「近似模拟」了 Paimon 的 LSM 分层思路——把新写入与存量分离、后台合并。</p>
+      </div>
+      <div class="card">
+        <h3><span class="dot tc"></span>CDC 流式消费</h3>
+        <p>增量数据以 append 写入 Change Store，<b>支持流式增量读取</b>，解决了标准 Iceberg「更新数据难以在下游流式消费」的问题——功能上对齐 Paimon 的原生 changelog。</p>
+      </div>
+      <div class="card">
+        <h3><span class="dot tc"></span>自动分桶加速合并</h3>
+        <p>写入时按主键 Hash 分桶，<b>仅同桶内的 Change 与 Base 数据合并</b>，减少 merge 时 shuffle 开销——思路与 Paimon 的 bucket + LSM 分区合并异曲同工。</p>
+      </div>
+      <div class="card">
+        <h3><span class="dot tc"></span>可扩展 Merge Function</h3>
+        <p>基于 Apache Amoro Mixed Format，支持 <b>Replace / Partial Update / Aggregation</b> 等合并模式（实时打宽、预聚合），并在原生 Spark 语法上扩展 Primary Key 定义——与 Paimon 的 merge engine 体系高度对标。</p>
+      </div>
+      <div class="card">
+        <h3><span class="dot tc"></span>智能数据优化</h3>
+        <p>管理端提供自动调度：小文件合并、过期 snapshot 清理、孤儿文件清理 + 统计信息构建与索引服务，默认 TTL 7 天，加速分析。</p>
+      </div>
+      <div class="card">
+        <h3><span class="dot tc"></span>兼容与治理</h3>
+        <p>完整支持 Iceberg V2 的 time travel、upsert，遵循 Iceberg REST API 规范，可用原生 Iceberg Client 读写；腾讯云也在向 Apache 社区开源回馈（已贡献 110+ PR）。</p>
+      </div>
+    </div>
+
+    <div class="tbl-wrap" style="margin-top:22px;">
+      <table class="compare">
+        <thead>
+          <tr><th class="dim">改进点</th><th class="t">TC Iceberg</th><th class="p">对标 Paimon 特性</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Base / Change 双表</td><td>增量与存量分离，后台合并</td><td>近似 Paimon 的 LSM 分层（sorted run → compaction）</td></tr>
+          <tr><td>CDC 流式消费</td><td>Change Store + 流式增量读</td><td>高度对应 Paimon 原生 changelog（+I/-U/+U/-D）</td></tr>
+          <tr><td>按主键自动分桶</td><td>同桶才需合并，减少 shuffle</td><td>对应 Paimon 的 bucket + 同键同桶路由</td></tr>
+          <tr><td>Merge Function</td><td>Replace / Partial Update / Aggregation</td><td>对应 Paimon merge engine（dedup / partial-update / aggregation）</td></tr>
+          <tr><td>智能数据优化</td><td>小文件合并 / snapshot 清理 / 索引</td><td>对应 Paimon 的 compaction + Tag + 索引能力</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3><span class="dot neutral"></span>结论：是否存在「引进 Paimon」？</h3>
+      <p>TC Iceberg <b>并非直接移植 Paimon 代码</b>，底层仍是 Iceberg 表格式（Insert / Position-Delete File），与 Paimon 的物理 LSM-tree 实现不同。但从**设计思想**上看，它确实「补齐」了 Iceberg 缺失的实时能力，且方向与 Paimon 高度一致——<b>双表分层、流式 changelog、自动分桶合并、可插拔 merge function</b>，几乎就是 Paimon 核心卖点的「Iceberg 生态化复刻」。因此可以说：TC Iceberg 是在 Iceberg 上<b>借鉴并落实了 Paimon 的核心理念</b>，把 Paimon 这类流式湖格式的优势带回了 Iceberg 的多引擎世界。</p>
+    </div>
+  </section>
+
+  <!-- 06 决策 -->
+  <section id="decision">
+    <div class="kicker">06 · 决策速查</div>
+    <h2 class="sec">一张表定选型</h2>
+    <div class="tbl-wrap">
+      <table class="compare">
+        <thead>
+          <tr><th class="dim">决策维度</th><th class="p">选 Paimon</th><th class="i">选 Iceberg</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>更新频率</td><td>高频 CDC / 实时 UPSERT</td><td>低频更新或纯追加</td></tr>
+          <tr><td>主力引擎</td><td>Flink</td><td>Spark / Trino / DuckDB / Snowflake 等</td></tr>
+          <tr><td>实时性</td><td>秒级 / 亚秒级</td><td>分钟级 / 小时级</td></tr>
+          <tr><td>多引擎兼容</td><td>较弱</td><td>强</td></tr>
+          <tr><td>治理与生态</td><td>较弱（持续增强）</td><td>强，工具丰富</td></tr>
+          <tr><td>读场景</td><td>点查 / 实时 / 流式消费</td><td>批量分析 / BI / Ad-hoc</td></tr>
+          <tr><td>运维重点</td><td>LSM compaction 与 bucket 调优</td><td>metadata 快照治理与 delete 文件</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="verdict">
+      <h2>选型一句话</h2>
+      <p><b>Paimon</b> 适合 Flink 生态、实时 CDC、主键高频更新、流式聚合与实时物化视图；<b>Iceberg</b> 适合多引擎分析、大规模离线湖仓、跨团队共享与合规审计。既有实时又有离线分析的团队，可组合为 <b>Paimon 实时层 + Iceberg 分析层</b> 的双湖架构——而 TC Iceberg 则为「坚持 Iceberg 生态」的团队提供了补齐准实时能力的另一条路。</p>
+    </div>
+  </section>
+
+  <footer class="foot">
+    本报告基于公开文档与社区资料整理 · Apache Paimon · Apache Iceberg · Tencent Cloud TC Iceberg · 2026-08
+  </footer>
+
+</div>
+</body>
+</html>

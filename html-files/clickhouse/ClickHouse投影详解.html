@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClickHouse 投影（Projection）详解</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-start: #e8f5fe;
+    --bg-mid: #f0e6ff;
+    --bg-end: #e0f7fa;
+    --card-bg: rgba(255, 255, 255, 0.72);
+    --card-border: rgba(255, 255, 255, 0.5);
+    --card-shadow: rgba(104, 116, 186, 0.15);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a6a;
+    --text-tertiary: #7a7a9a;
+    --accent-1: #6c63ff;
+    --accent-2: #00b4d8;
+    --accent-3: #f97316;
+    --accent-4: #10b981;
+    --accent-1-light: rgba(108, 99, 255, 0.1);
+    --accent-2-light: rgba(0, 180, 216, 0.1);
+    --accent-3-light: rgba(249, 115, 22, 0.1);
+    --accent-4-light: rgba(16, 185, 129, 0.1);
+    --code-bg: rgba(0, 0, 0, 0.04);
+    --code-border: rgba(0, 0, 0, 0.06);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
+    min-height: 100vh;
+    color: var(--text-primary);
+    line-height: 1.7;
+    padding: 40px 24px;
+  }
+
+  .container {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  /* ===== Hero Section ===== */
+  .hero {
+    text-align: center;
+    padding: 60px 40px 50px;
+    margin-bottom: 48px;
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.08), rgba(0, 180, 216, 0.08));
+    border-radius: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -20%;
+    width: 70%;
+    height: 200%;
+    background: radial-gradient(ellipse, rgba(108, 99, 255, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40%;
+    right: -10%;
+    width: 50%;
+    height: 150%;
+    background: radial-gradient(ellipse, rgba(0, 180, 216, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .hero h1 {
+    font-size: 42px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+    position: relative;
+    letter-spacing: -0.5px;
+  }
+  .hero p {
+    font-size: 18px;
+    color: var(--text-secondary);
+    max-width: 640px;
+    margin: 0 auto;
+    position: relative;
+    line-height: 1.8;
+  }
+
+  /* ===== Glass Card ===== */
+  .glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 36px 40px;
+    margin-bottom: 32px;
+    box-shadow: 0 8px 32px var(--card-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(104, 116, 186, 0.2);
+  }
+
+  .glass-card h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .glass-card h2 .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .glass-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 24px 0 12px;
+    color: var(--text-primary);
+  }
+  .glass-card h3:first-of-type {
+    margin-top: 0;
+  }
+  .glass-card p {
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    font-size: 15.5px;
+  }
+  .glass-card p:last-child {
+    margin-bottom: 0;
+  }
+  .glass-card ul, .glass-card ol {
+    color: var(--text-secondary);
+    margin: 0 0 16px 20px;
+    font-size: 15.5px;
+  }
+  .glass-card li {
+    margin-bottom: 8px;
+  }
+  .glass-card li strong {
+    color: var(--text-primary);
+  }
+
+  /* ===== Accent icons ===== */
+  .icon-accent-1 { background: var(--accent-1-light); color: var(--accent-1); }
+  .icon-accent-2 { background: var(--accent-2-light); color: var(--accent-2); }
+  .icon-accent-3 { background: var(--accent-3-light); color: var(--accent-3); }
+  .icon-accent-4 { background: var(--accent-4-light); color: var(--accent-4); }
+
+  /* ===== Code blocks ===== */
+  .code-block {
+    background: #1a1a2e;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin: 16px 0 20px;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-block .lang-label {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0 14px 0 10px;
+  }
+  .code-block code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #e4e4e7;
+    display: block;
+    white-space: pre;
+  }
+  .code-block .kw { color: #c084fc; }   /* keyword */
+  .code-block .fn { color: #60a5fa; }   /* function */
+  .code-block .str { color: #34d399; }  /* string */
+  .code-block .cm { color: #6b7280; font-style: italic; } /* comment */
+  .code-block .num { color: #fbbf24; }  /* number */
+  .code-block .op { color: #f472b6; }   /* operator */
+  .code-block .tp { color: #22d3ee; }   /* type */
+  .code-block .pr { color: #f87171; }   /* property */
+
+  /* Inline code */
+  .inline-code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13.5px;
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    color: var(--accent-1);
+  }
+
+  /* ===== Key points ===== */
+  .key-points {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .key-point {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 14px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    text-align: center;
+  }
+  .key-point .kp-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .key-point .kp-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .key-point .kp-desc {
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  /* ===== Highlight box ===== */
+  .highlight-box {
+    background: rgba(108, 99, 255, 0.06);
+    border-left: 4px solid var(--accent-1);
+    border-radius: 0 12px 12px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .highlight-box.warning {
+    background: rgba(249, 115, 22, 0.06);
+    border-left-color: var(--accent-3);
+  }
+  .highlight-box.success {
+    background: rgba(16, 185, 129, 0.06);
+    border-left-color: var(--accent-4);
+  }
+  .highlight-box.info {
+    background: rgba(0, 180, 216, 0.06);
+    border-left-color: var(--accent-2);
+  }
+  .highlight-box p {
+    margin-bottom: 0;
+    font-size: 14.5px;
+  }
+  .highlight-box strong {
+    color: var(--text-primary);
+  }
+
+  /* ===== Comparison table ===== */
+  .comparison-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 16px 0 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 14.5px;
+  }
+  .comparison-table thead th {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    color: #fff;
+    padding: 14px 18px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .comparison-table tbody td {
+    padding: 13px 18px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.4);
+  }
+  .comparison-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+  .comparison-table tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  /* ===== Example scenario ===== */
+  .scenario {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 14px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  .scenario .scenario-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .scenario .scenario-desc {
+    font-size: 14.5px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+  .scenario .scenario-result {
+    font-size: 14px;
+    color: var(--accent-4);
+    font-weight: 600;
+  }
+
+  /* ===== Section divider ===== */
+  .section-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(108, 99, 255, 0.15), transparent);
+    margin: 40px 0;
+    border: none;
+  }
+
+  /* ===== Footer ===== */
+  .footer {
+    text-align: center;
+    padding: 32px 0;
+    color: var(--text-tertiary);
+    font-size: 13px;
+  }
+  .footer a {
+    color: var(--accent-1);
+    text-decoration: none;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 640px) {
+    body { padding: 20px 12px; }
+    .hero { padding: 36px 20px 32px; }
+    .hero h1 { font-size: 28px; }
+    .hero p { font-size: 15px; }
+    .glass-card { padding: 24px 20px; }
+    .glass-card h2 { font-size: 20px; }
+    .code-block { padding: 14px 16px; }
+    .code-block code { font-size: 12.5px; }
+    .key-points { grid-template-columns: 1fr 1fr; }
+    .comparison-table { font-size: 13px; }
+    .comparison-table thead th, .comparison-table tbody td { padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ===== Hero ===== -->
+  <div class="hero">
+    <div class="hero-badge">ClickHouse 高级特性</div>
+    <h1>投影（Projection）详解</h1>
+    <p>在同一个表内创建数据的多个物理副本，以不同的排序键或预聚合方式存储，<br>让查询优化器自动选择最优路径——无需改动任何 SQL。</p>
+  </div>
+
+  <!-- ===== 1. 什么是投影 ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-1">🔮</span> 什么是投影？</h2>
+    <p>
+      <strong>投影（Projection）</strong> 是 ClickHouse MergeTree 表引擎家族提供的一项高级特性。它允许你在<strong>同一张表内部</strong>，基于原始数据创建额外的物理存储副本，每个副本可以拥有<strong>独立的排序键</strong>，甚至可以是<strong>预聚合</strong>后的结果。
+    </p>
+    <p>
+      投影的核心思想是「<strong>以空间换时间</strong>」——通过冗余存储来加速特定模式的查询。当查询到达时，ClickHouse 的查询优化器会<strong>自动</strong>判断哪个投影最合适，透明地从中读取数据，完全不需要修改查询语句。
+    </p>
+
+    <div class="key-points">
+      <div class="key-point">
+        <div class="kp-icon">📦</div>
+        <div class="kp-label">同一个表</div>
+        <div class="kp-desc">投影数据与主表数据存储在一起，无需创建额外表</div>
+      </div>
+      <div class="key-point">
+        <div class="kp-icon">🔄</div>
+        <div class="kp-label">自动维护</div>
+        <div class="kp-desc">写入主表时自动同步更新投影，保证数据一致性</div>
+      </div>
+      <div class="key-point">
+        <div class="kp-icon">🤖</div>
+        <div class="kp-label">透明使用</div>
+        <div class="kp-desc">查询优化器自动选择最佳投影，无需修改 SQL</div>
+      </div>
+      <div class="key-point">
+        <div class="kp-icon">⚡</div>
+        <div class="kp-label">查询加速</div>
+        <div class="kp-desc">通过不同排序键或预聚合大幅提升查询性能</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 2. 投影的类型 ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-2">📐</span> 投影的两种类型</h2>
+
+    <h3>① 普通投影（Normal Projection）</h3>
+    <p>选择部分或全部列，但使用<strong>不同的排序键</strong>重新组织数据。适合加速特定列的过滤和排序查询。</p>
+    <div class="highlight-box info">
+      <p><strong>适用场景：</strong>主表按 <code class="inline-code">order_date</code> 排序，但经常按 <code class="inline-code">customer_id</code> 过滤查询。</p>
+    </div>
+
+    <h3>② 聚合投影（Aggregate Projection）</h3>
+    <p>在投影中直接<strong>预计算聚合结果</strong>（如 <code class="inline-code">SUM</code>、<code class="inline-code">COUNT</code>、<code class="inline-code">AVG</code> 等），查询时直接读取聚合后的数据，避免实时扫描全表。</p>
+    <div class="highlight-box info">
+      <p><strong>适用场景：</strong>频繁按产品统计销售额、按用户统计访问次数等聚合查询。</p>
+    </div>
+  </div>
+
+  <!-- ===== 3. 投影 vs 物化视图 ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-3">⚖️</span> 投影 vs 物化视图</h2>
+    <p>投影和物化视图都能实现查询加速，但它们的架构和适用场景有显著差异：</p>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>对比维度</th>
+          <th>投影（Projection）</th>
+          <th>物化视图（Materialized View）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>数据存储</strong></td>
+          <td>与主表 <strong>同一张表</strong>，共享生命周期</td>
+          <td>独立的物理表，独立生命周期</td>
+        </tr>
+        <tr>
+          <td><strong>数据一致性</strong></td>
+          <td>✅ <strong>强一致</strong>——写入主表时原子性同步更新</td>
+          <td>⚠️ 可能不一致——主表与视图写入独立，出错时可能丢失数据</td>
+        </tr>
+        <tr>
+          <td><strong>查询透明性</strong></td>
+          <td>✅ <strong>完全透明</strong>——优化器自动路由，SQL 无需修改</td>
+          <td>⚠️ 需要手动查视图表，或使用 <code>MATERIALIZED VIEW</code> + <code>TO</code> 目标表</td>
+        </tr>
+        <tr>
+          <td><strong>写入性能</strong></td>
+          <td>写入时额外计算投影，有一定开销</td>
+          <td>异步写入，对主表写入影响较小</td>
+        </tr>
+        <tr>
+          <td><strong>灵活性</strong></td>
+          <td>限于基于同一张表的变换</td>
+          <td>支持多表 JOIN、过滤、复杂转换</td>
+        </tr>
+        <tr>
+          <td><strong>维护成本</strong></td>
+          <td>低——自动管理，无需额外操作</td>
+          <td>高——需独立管理、监控数据一致性</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight-box success">
+      <p><strong>总结：</strong>如果只需要在单表内做排序优化或简单聚合，投影是比物化视图更优雅、更可靠的选择。物化视图更适合跨表 JOIN 或复杂 ETL 场景。</p>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ===== 4. 详细示例 ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-1">📝</span> 详细示例</h2>
+    <p>我们先创建一个销售订单表，然后逐步添加不同类型的投影，并通过实际查询观察效果。</p>
+
+    <!-- 示例 1 -->
+    <h3>示例 1：准备基础表</h3>
+    <p>创建一个销售订单表，主排序键为 <code class="inline-code">(order_date, customer_id)</code>。</p>
+    <div class="code-block">
+      <span class="lang-label">SQL</span>
+      <code><span class="kw">CREATE TABLE</span> sales (
+    order_date    <span class="tp">Date</span>,
+    customer_id   <span class="tp">UInt32</span>,
+    product_id    <span class="tp">UInt32</span>,
+    category      <span class="tp">String</span>,
+    amount        <span class="tp">Float64</span>,
+    quantity      <span class="tp">UInt32</span>
+) <span class="kw">ENGINE</span> = <span class="tp">MergeTree</span>()
+<span class="kw">ORDER BY</span> (order_date, customer_id);</code>
+    </div>
+
+    <!-- 示例 2 -->
+    <h3>示例 2：创建普通投影（更改排序键）</h3>
+    <p>我们经常按 <code class="inline-code">product_id</code> 查询销售额，而主表是按日期排序的。创建一个按 <code class="inline-code">product_id</code> 排序的投影：</p>
+    <div class="code-block">
+      <span class="lang-label">SQL</span>
+      <code><span class="kw">ALTER TABLE</span> sales
+<span class="kw">ADD PROJECTION</span> sales_by_product (
+    <span class="kw">SELECT</span> *
+    <span class="kw">ORDER BY</span> product_id
+);
+
+<span class="kw">ALTER TABLE</span> sales
+<span class="kw">MATERIALIZE PROJECTION</span> sales_by_product;</code>
+    </div>
+    <div class="scenario">
+      <div class="scenario-title">📊 效果演示</div>
+      <div class="scenario-desc">
+        执行查询 <code class="inline-code">SELECT * FROM sales WHERE product_id = 42 ORDER BY amount DESC</code> —— 优化器自动从 <code class="inline-code">sales_by_product</code> 投影读取数据，<br>因为该投影的排序键 <code class="inline-code">product_id</code> 与 WHERE 条件完全匹配，无需扫描全表。
+      </div>
+      <div class="scenario-result">✅ 查询速度提升：10 ~ 50 倍（取决于数据量）</div>
+    </div>
+
+    <!-- 示例 3 -->
+    <h3>示例 3：创建聚合投影（预聚合）</h3>
+    <p>我们经常按产品类别汇总销售额和订单量，创建一个聚合投影来预计算：</p>
+    <div class="code-block">
+      <span class="lang-label">SQL</span>
+      <code><span class="kw">ALTER TABLE</span> sales
+<span class="kw">ADD PROJECTION</span> sales_category_summary (
+    <span class="kw">SELECT</span>
+        category,
+        <span class="fn">count</span>()          <span class="kw">AS</span> order_count,
+        <span class="fn">sum</span>(amount)       <span class="kw">AS</span> total_amount,
+        <span class="fn">avg</span>(amount)       <span class="kw">AS</span> avg_amount,
+        <span class="fn">sum</span>(quantity)     <span class="kw">AS</span> total_quantity
+    <span class="kw">GROUP BY</span> category
+);
+
+<span class="kw">ALTER TABLE</span> sales
+<span class="kw">MATERIALIZE PROJECTION</span> sales_category_summary;</code>
+    </div>
+    <div class="scenario">
+      <div class="scenario-title">📊 效果演示</div>
+      <div class="scenario-desc">
+        执行查询 <code class="inline-code">SELECT category, sum(amount) AS total FROM sales GROUP BY category</code> —— 优化器自动使用 <code class="inline-code">sales_category_summary</code> 投影，<br>直接从预聚合结果中读取数据，无需扫描全表逐行计算。
+      </div>
+      <div class="scenario-result">✅ 查询速度提升：100 ~ 1000 倍（大数据量下，I/O 从 GB 级降至 KB 级）</div>
+    </div>
+
+    <!-- 示例 4 -->
+    <h3>示例 4：创建复合聚合投影（多维度）</h3>
+    <p>如果需要按产品 + 日期统计销售指标：</p>
+    <div class="code-block">
+      <span class="lang-label">SQL</span>
+      <code><span class="kw">ALTER TABLE</span> sales
+<span class="kw">ADD PROJECTION</span> sales_daily_product (
+    <span class="kw">SELECT</span>
+        order_date,
+        product_id,
+        <span class="fn">count</span>()          <span class="kw">AS</span> sale_count,
+        <span class="fn">sum</span>(amount)       <span class="kw">AS</span> daily_amount,
+        <span class="fn">sum</span>(quantity)     <span class="kw">AS</span> daily_quantity
+    <span class="kw">GROUP BY</span> order_date, product_id
+);
+
+<span class="kw">ALTER TABLE</span> sales
+<span class="kw">MATERIALIZE PROJECTION</span> sales_daily_product;</code>
+    </div>
+    <div class="highlight-box success">
+      <p><strong>技巧：</strong>聚合投影的 <code class="inline-code">GROUP BY</code> 列越多，覆盖的查询模式越广，但存储开销也越大。建议只对高频查询模式创建投影。</p>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ===== 5. 投影的用途与场景 ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-4">🎯</span> 投影的核心用途</h2>
+
+    <div class="scenario">
+      <div class="scenario-title">🚀 用途一：加速特定列的过滤查询</div>
+      <div class="scenario-desc">
+        <strong>问题：</strong>主表按 <code class="inline-code">timestamp</code> 排序，但业务方经常按 <code class="inline-code">user_id</code> 查最近行为。<br>
+        <strong>方案：</strong>创建一个按 <code class="inline-code">user_id</code> 排序的普通投影。<br>
+        <strong>原理：</strong>投影的排序键与 WHERE 条件匹配时，ClickHouse 可以通过二分查找精确定位数据块，避免全表扫描。
+      </div>
+    </div>
+
+    <div class="scenario">
+      <div class="scenario-title">⚡ 用途二：预聚合加速报表查询</div>
+      <div class="scenario-desc">
+        <strong>问题：</strong>每小时需要按 10 个维度汇总上亿条数据，实时计算耗时 30 秒+。<br>
+        <strong>方案：</strong>创建包含 <code class="inline-code">GROUP BY</code> 的聚合投影，数据写入时即完成预计算。<br>
+        <strong>原理：</strong>聚合投影将 O(n) 的实时聚合降为 O(1) 的读取，I/O 减少 99% 以上。
+      </div>
+    </div>
+
+    <div class="scenario">
+      <div class="scenario-title">📉 用途三：降低存储与 I/O</div>
+      <div class="scenario-desc">
+        <strong>问题：</strong>表中包含 100 列，但某类查询只需要 5 列。<br>
+        <strong>方案：</strong>创建一个只包含那 5 列的普通投影（<code class="inline-code">SELECT col1, col2, ...</code>）。<br>
+        <strong>原理：</strong>投影只存储指定列，扫描时读取更少的数据页，减少 I/O 和内存开销。
+      </div>
+    </div>
+
+    <div class="scenario">
+      <div class="scenario-title">🔄 用途四：替代物化视图的简单场景</div>
+      <div class="scenario-desc">
+        <strong>问题：</strong>需要预聚合但又担心物化视图的数据一致性问题。<br>
+        <strong>方案：</strong>使用聚合投影代替物化视图。<br>
+        <strong>原理：</strong>投影与主表数据强一致，原子性写入，<strong>不存在</strong>物化视图因写入失败导致的数据丢失或重复问题。
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 6. 使用注意事项 ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-3">⚠️</span> 使用注意事项</h2>
+    <ul>
+      <li><strong>存储开销：</strong>每个投影都是数据的完整副本（或部分副本），会增加磁盘占用。建议只对关键查询模式创建投影。</li>
+      <li><strong>写入放大：</strong>写入数据时，所有投影都需要同步更新，<code class="inline-code">INSERT</code> 性能会有所下降。适用于写少读多的场景。</li>
+      <li><strong>聚合投影的限制：</strong>聚合投影的 <code class="inline-code">GROUP BY</code> 列必须包含在 <code class="inline-code">ORDER BY</code> 中，且聚合函数必须是 ClickHouse 支持的聚合函数。</li>
+      <li><strong>存量数据的物化：</strong>使用 <code class="inline-code">ALTER TABLE ... MATERIALIZE PROJECTION</code> 对已有数据构建投影，对于大表可能需要较长时间，建议在低峰期执行。</li>
+      <li><strong>投影的删除：</strong>使用 <code class="inline-code">ALTER TABLE ... DROP PROJECTION</code> 删除投影，会同时删除对应的物理数据。</li>
+      <li><strong>查询覆盖度：</strong>并非所有查询都能命中投影——优化器会评估投影的排序键与查询条件的匹配程度。可以使用 <code class="inline-code">EXPLAIN</code> 查看查询是否使用了投影。</li>
+    </ul>
+
+    <div class="highlight-box warning">
+      <p><strong>查看投影是否被使用：</strong>在查询前加上 <code class="inline-code">EXPLAIN</code>，输出中如果包含 <code class="inline-code">ReadFromMergeTree</code> 且显示投影名称，说明查询命中了该投影。</p>
+    </div>
+  </div>
+
+  <!-- ===== 7. 最佳实践 ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-4">💡</span> 最佳实践</h2>
+    <ol>
+      <li><strong>先分析慢查询：</strong>使用 <code class="inline-code">system.query_log</code> 找出耗时最长的查询，针对性地创建投影。</li>
+      <li><strong>优先使用聚合投影：</strong>聚合投影的加速效果远大于普通投影，因为它在写入时就完成了计算。</li>
+      <li><strong>控制投影数量：</strong>每张表建议不超过 3 ~ 5 个投影，过多的投影会导致写入性能严重下降。</li>
+      <li><strong>使用 <code class="inline-code">EXPLAIN</code> 验证：</strong>创建投影后，用 <code class="inline-code">EXPLAIN</code> 检查高频查询是否确实命中了投影。</li>
+      <li><strong>监控投影存储：</strong>通过 <code class="inline-code">system.parts</code> 表查看每个投影分区的数据量，及时发现存储异常增长。</li>
+      <li><strong>配合分区键：</strong>投影与分区键（<code class="inline-code">PARTITION BY</code>）配合使用效果更佳，分区剪枝 + 投影加速可以带来双重性能提升。</li>
+    </ol>
+  </div>
+
+  <!-- ===== Footer ===== -->
+  <div class="footer">
+    <p>ClickHouse 投影（Projection）详解 · 持续学习中</p>
+  </div>
+
+</div>
+
+</body>
+</html>

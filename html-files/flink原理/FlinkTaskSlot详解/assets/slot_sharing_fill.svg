@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 900 420" role="img" aria-label="Slot Sharing 16 个子任务装填原理图">
+  <defs>
+    <style>
+      .tm{fill:#eef3ff;stroke:#c8d2f0;stroke-width:2;}
+      .band{fill:#ffffff;stroke:#e3e9f9;stroke-width:1.5;}
+      .chip{fill:#ffffff;stroke:#d6defa;stroke-width:1.5;}
+      .t-title{fill:#1c2340;font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;font-weight:700;}
+      .t-slot{fill:#5a637d;font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:13px;font-weight:600;}
+      .t-chip{fill:#3b4a8f;font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:13px;}
+      .t-note{fill:#5a637d;font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:12px;}
+    </style>
+  </defs>
+
+  <!-- TM 总容器 -->
+  <rect class="tm" x="30" y="76" width="840" height="312" rx="18"/>
+  <text class="t-title" x="450" y="104" text-anchor="middle">1 台 TaskManager · 4 个 Slot（Slot Sharing 开启）</text>
+
+  <!-- Slot1 -->
+  <rect class="band" x="40" y="118" width="824" height="52" rx="12"/>
+  <text class="t-slot" x="56" y="145">Slot1</text>
+  <g class="chip">
+    <rect x="160" y="124" width="118" height="40" rx="10"/>
+    <rect x="292" y="124" width="118" height="40" rx="10"/>
+    <rect x="424" y="124" width="118" height="40" rx="10"/>
+    <rect x="556" y="124" width="118" height="40" rx="10"/>
+    <rect x="688" y="124" width="118" height="40" rx="10"/>
+  </g>
+  <text class="t-chip" x="219" y="148" text-anchor="middle">Source[0]</text>
+  <text class="t-chip" x="351" y="148" text-anchor="middle">Map[0]</text>
+  <text class="t-chip" x="483" y="148" text-anchor="middle">Wind[0]</text>
+  <text class="t-chip" x="615" y="148" text-anchor="middle">Red[0]</text>
+  <text class="t-chip" x="747" y="148" text-anchor="middle">Sink[0]</text>
+
+  <!-- Slot2 -->
+  <rect class="band" x="40" y="186" width="824" height="52" rx="12"/>
+  <text class="t-slot" x="56" y="213">Slot2</text>
+  <g class="chip">
+    <rect x="160" y="192" width="118" height="40" rx="10"/>
+    <rect x="292" y="192" width="118" height="40" rx="10"/>
+    <rect x="424" y="192" width="118" height="40" rx="10"/>
+  </g>
+  <text class="t-chip" x="219" y="216" text-anchor="middle">Map[1]</text>
+  <text class="t-chip" x="351" y="216" text-anchor="middle">Wind[1]</text>
+  <text class="t-chip" x="483" y="216" text-anchor="middle">Red[1]</text>
+
+  <!-- Slot3 -->
+  <rect class="band" x="40" y="254" width="824" height="52" rx="12"/>
+  <text class="t-slot" x="56" y="281">Slot3</text>
+  <g class="chip">
+    <rect x="160" y="260" width="118" height="40" rx="10"/>
+    <rect x="292" y="260" width="118" height="40" rx="10"/>
+    <rect x="424" y="260" width="118" height="40" rx="10"/>
+    <rect x="556" y="260" width="118" height="40" rx="10"/>
+    <rect x="688" y="260" width="118" height="40" rx="10"/>
+  </g>
+  <text class="t-chip" x="219" y="284" text-anchor="middle">Source[1]</text>
+  <text class="t-chip" x="351" y="284" text-anchor="middle">Map[2]</text>
+  <text class="t-chip" x="483" y="284" text-anchor="middle">Wind[2]</text>
+  <text class="t-chip" x="615" y="284" text-anchor="middle">Red[2]</text>
+  <text class="t-chip" x="747" y="284" text-anchor="middle">Sink[1]</text>
+
+  <!-- Slot4 -->
+  <rect class="band" x="40" y="322" width="824" height="52" rx="12"/>
+  <text class="t-slot" x="56" y="349">Slot4</text>
+  <g class="chip">
+    <rect x="160" y="328" width="118" height="40" rx="10"/>
+    <rect x="292" y="328" width="118" height="40" rx="10"/>
+    <rect x="424" y="328" width="118" height="40" rx="10"/>
+  </g>
+  <text class="t-chip" x="219" y="352" text-anchor="middle">Map[3]</text>
+  <text class="t-chip" x="351" y="352" text-anchor="middle">Wind[3]</text>
+  <text class="t-chip" x="483" y="352" text-anchor="middle">Red[3]</text>
+
+  <!-- 底部说明 -->
+  <text class="t-note" x="450" y="404" text-anchor="middle">Source / Sink 并行度 2，只占 Slot1 与 Slot3；宽阶段（Map/Wind/Red 并行度 4）各占 4 个 Slot，共 16 个子任务 = 16 份并行需求</text>
+</svg>

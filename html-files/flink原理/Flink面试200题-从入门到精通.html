@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flink 面试 200 题 · 从入门到精通</title>
+<style>
+  :root{
+    --ink:#1f2b3d;
+    --ink-soft:#5b6b80;
+    --brand:#4f7cff;
+    --brand-2:#7c5cff;
+    --brand-3:#00b8d9;
+    --accent:#ff9a5c;
+    --glass:rgba(255,255,255,.62);
+    --glass-brd:rgba(255,255,255,.75);
+    --shadow:0 10px 40px rgba(79,124,255,.16);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--ink);
+    line-height:1.75;
+    background:linear-gradient(135deg,#e8f6ff 0%,#f3edff 40%,#fff4e6 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* 装饰光斑 */
+  .orb{position:fixed;border-radius:50%;filter:blur(70px);opacity:.5;z-index:0;pointer-events:none}
+  .orb-1{width:380px;height:380px;background:#9cc4ff;top:-120px;left:-80px}
+  .orb-2{width:420px;height:420px;background:#d3c0ff;top:30%;right:-140px}
+  .orb-3{width:360px;height:360px;background:#ffe3bd;bottom:-120px;left:30%}
+
+  .wrap{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:28px 20px 80px}
+
+  /* 头部 */
+  header{margin-bottom:34px}
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .logo{
+    width:46px;height:46px;border-radius:14px;flex:none;
+    background:linear-gradient(135deg,#4f7cff,#7c5cff,#00b8d9);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:800;font-size:20px;
+    box-shadow:0 8px 20px rgba(79,124,255,.4);
+  }
+  .kicker{font-size:13px;letter-spacing:2px;color:var(--ink-soft);font-weight:600}
+  h1{
+    font-size:clamp(24px,4.5vw,38px);line-height:1.25;font-weight:800;
+    background:linear-gradient(120deg,#2b67ff,#7c5cff 55%,#00a8c8);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    letter-spacing:.5px;
+  }
+  .hero-glass,.panel{
+    background:var(--glass);border:1px solid var(--glass-brd);
+    backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
+    border-radius:22px;box-shadow:var(--shadow);
+  }
+  .hero-glass{padding:22px 24px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .stat{display:flex;flex-direction:column;align-items:center;min-width:76px}
+  .stat b{font-size:28px;font-weight:800;background:linear-gradient(120deg,#4f7cff,#00b8d9);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat span{font-size:12px;color:var(--ink-soft)}
+
+  /* 控制区 */
+  .panel{padding:18px 20px;margin-bottom:26px;position:sticky;top:14px;z-index:5}
+  .search{
+    width:100%;padding:12px 16px;border-radius:14px;border:1px solid var(--glass-brd);
+    background:rgba(255,255,255,.72);font-size:14px;color:var(--ink);
+    outline:none;transition:.2s;box-shadow:inset 0 1px 3px rgba(0,0,0,.05);
+  }
+  .search:focus{border-color:var(--brand);box-shadow:0 0 0 4px rgba(79,124,255,.18)}
+  .filters{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+  .filters .label{font-size:13px;color:var(--ink-soft);margin-right:2px}
+  .chip{
+    border:none;cursor:pointer;font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;
+    background:rgba(255,255,255,.7);color:var(--ink-soft);border:1px solid var(--glass-brd);
+    transition:.2s;
+  }
+  .chip:hover{color:var(--brand);transform:translateY(-1px)}
+  .chip.active{color:#fff;background:linear-gradient(120deg,#4f7cff,#7c5cff);border-color:transparent;box-shadow:0 6px 16px rgba(79,124,255,.35)}
+  .result-tip{font-size:13px;color:var(--ink-soft);margin-left:auto}
+
+  /* 分类标题 */
+  .cat-title{
+    display:flex;align-items:center;gap:12px;margin:38px 0 16px;
+  }
+  .cat-title .line{flex:1;height:1px;background:linear-gradient(90deg,rgba(79,124,255,.4),transparent)}
+  .cat-title h2{font-size:20px;font-weight:800;background:linear-gradient(120deg,#2b67ff,#7c5cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cat-title .count{font-size:12px;background:rgba(255,255,255,.7);border:1px solid var(--glass-brd);padding:2px 10px;border-radius:999px;color:var(--ink-soft)}
+
+  /* 卡片 */
+  .qcard{
+    background:var(--glass);border:1px solid var(--glass-brd);
+    backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);
+    border-radius:18px;padding:18px 22px;margin-bottom:14px;cursor:pointer;
+    box-shadow:0 6px 24px rgba(79,124,255,.10);
+    transition:transform .22s,box-shadow .22s;position:relative;overflow:hidden;
+  }
+  .qcard::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:5px;
+    background:linear-gradient(180deg,#4f7cff,#00b8d9);opacity:.0;transition:.25s;border-radius:0 4px 4px 0;
+  }
+  .qcard:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(79,124,255,.20)}
+  .qcard.open::before{opacity:1}
+  .qhead{display:flex;gap:14px;align-items:flex-start}
+  .qnum{
+    flex:none;width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-size:15px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,#4f7cff,#7c5cff);
+    box-shadow:0 6px 14px rgba(79,124,255,.35);
+  }
+  .qmeta{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+  .tag{font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px}
+  .tag.cat{color:#4156c5;background:rgba(79,124,255,.14)}
+  .tag.diff{color:#b45b1f;background:rgba(255,154,92,.16)}
+  .tag.diff.d2{color:#1f6d4a;background:rgba(0,184,137,.15)}
+  .tag.diff.d3{color:#a02a8a;background:rgba(124,92,255,.16)}
+  .qtext{font-size:16px;font-weight:700;color:var(--ink);flex:1}
+  .arrow{margin-left:auto;color:var(--brand);font-weight:800;transition:transform .3s;flex:none}
+  .qcard.open .arrow{transform:rotate(90deg)}
+  .answer{
+    max-height:0;overflow:hidden;transition:max-height .38s ease;border-radius:14px;
+  }
+  .qcard.open .answer{max-height:1200px}
+  .answer-in{
+    margin-top:16px;padding:16px 18px;background:rgba(255,255,255,.66);
+    border:1px solid rgba(255,255,255,.8);border-radius:14px;font-size:14.5px;color:#38465a;
+  }
+  .answer-in p{margin-bottom:8px}
+  .answer-in p:last-child{margin-bottom:0}
+  .answer-in b{color:#2b67ff}
+  .answer-in ul{padding-left:20px;margin:6px 0}
+  .hint{
+    display:inline-block;margin-top:12px;font-size:12.5px;color:var(--ink-soft);
+    background:rgba(255,255,255,.5);border:1px solid var(--glass-brd);padding:3px 12px;border-radius:999px;
+  }
+  .footer{text-align:center;color:var(--ink-soft);font-size:13px;margin-top:40px}
+  .empty{text-align:center;color:var(--ink-soft);padding:40px 0;display:none}
+
+  @media(max-width:640px){
+    .hero-glass{flex-direction:column;align-items:flex-start}
+    .qhead{flex-direction:row}
+    .result-tip{width:100%;margin-left:0;text-align:left}
+  }
+</style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="wrap">
+    <header>
+      <div class="topbar">
+        <div class="logo">F</div>
+        <span class="kicker">FLINK · 面试宝典</span>
+      </div>
+      <h1>Flink 面试 200 题 · 从入门到精通</h1>
+      <div class="hero-glass" style="margin-top:20px">
+        <p style="max-width:560px;font-size:14.5px;color:var(--ink-soft)">
+          覆盖 <b style="color:#2b67ff">基础概念 · 部署运行 · 编程模型 · 时间窗口 · 状态容错 · Table&nbsp;/&nbsp;SQL · 连接器集成 · Flink&nbsp;CDC · 性能调优 · 高级原理</b>，
+          每题以面试者视角作答。点击卡片即可揭开答案。
+        </p>
+        <div style="display:flex;gap:26px;flex-wrap:wrap">
+          <div class="stat"><b id="stat-total">0</b><span>题目总数</span></div>
+          <div class="stat"><b id="stat-open">0</b><span>已揭晓</span></div>
+          <div class="stat"><b id="stat-cat">12</b><span>知识分类</span></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="panel">
+      <input class="search" id="search" type="text" placeholder="🔍  搜索题目关键词，如：Watermark / 反压 / 维表 / 快照 …">
+      <div class="filters">
+        <span class="label">难度</span>
+        <button class="chip active" data-d="all">全部</button>
+        <button class="chip" data-d="入门">入门</button>
+        <button class="chip" data-d="进阶">进阶</button>
+        <button class="chip" data-d="高级">高级</button>
+        <span class="label" style="margin-left:8px">分类</span>
+        <button class="chip active" data-c="all">全部</button>
+        <button class="chip" data-c="基础">基础概念</button>
+        <button class="chip" data-c="部署">部署运行</button>
+        <button class="chip" data-c="编程">编程模型</button>
+        <button class="chip" data-c="窗口">时间与窗口</button>
+        <button class="chip" data-c="状态">状态与容错</button>
+        <button class="chip" data-c="水位">Watermark</button>
+        <button class="chip" data-c="表">Table/SQL</button>
+        <button class="chip" data-c="函数">函数与算子</button>
+        <button class="chip" data-c="连接">连接器集成</button>
+        <button class="chip" data-c="CDC">Flink CDC</button>
+        <button class="chip" data-c="调优">性能调优</button>
+        <button class="chip" data-c="原理">高级原理</button>
+        <span class="result-tip" id="tip"></span>
+      </div>
+    </div>
+
+    <div id="list"></div>
+    <div class="empty" id="empty">没有符合条件的题目，换个关键词试试 ~</div>
+    <div class="footer">Flink 面试宝典 · 共 <span id="ftotal">0</span> 题　　由浅入深，循序渐进</div>
+  </div>
+
+<script>
+const CAT_ORDER = ["基础","部署","编程","窗口","水位","状态","表","函数","连接","CDC","调优","原理"];
+const DATA = [
+{c:"基础",d:"入门",q:"什么是 Flink？它解决什么问题？",a:"<p>Flink 是一个开源的<b>分布式流处理引擎</b>，能够对有界流和无界流进行<b>有状态</b>、<b>低延迟</b>、<b>高吞吐</b>的实时计算。它解决的核心问题是：在海量实时数据（如日志、点击流、交易流）上，以毫秒级延迟持续进行聚合、关联、窗口统计等计算，并提供<b>精确一次（Exactly-Once）</b>的容错语义。与批处理不同，流处理强调数据不断到达、结果持续产出，因此 Flink 从底层就围绕“流”设计，批处理可视为有界流的特例。</p>"},
+{c:"基础",d:"入门",q:"Flink 与 Spark Streaming 的核心区别是什么？",a:"<p>二者的<b>计算模型本质不同</b>：<b>Spark Streaming</b> 采用微批（Micro-Batch），把实时数据切分成小批次周期处理，延迟通常在秒级；<b>Flink 是真正的“事件驱动”流处理</b>，数据到一条处理一条，延迟可达毫秒级。此外 Flink 应事先内置了完善的<b>流式窗口</b>、<b>watermark</b>和<b>状态管理</b>，而 Spark 的 Structured Streaming 直到后来才补齐。实时性要求高的场景（毫秒级）优先选 Flink，允许秒级延迟且重批处理时选 Spark。</p>"},
+{c:"基础",d:"入门",q:"什么是「有界流」和「无界流」？Flink 如何统一处理？",a:"<p><b>无界流</b>没有定义终点，数据持续到达，必须不断处理并输出结果；<b>有界流</b>有明确起止，类似传统批数据。Flink 在架构上把两者统一：无界流用<b>事件驱动 + 窗口触发</b>处理，有界流退化成只要在数据结束处触发即可的批处理。Flink 的 DataStream API 与 Table/SQL 都能同时处理二者，底层数据源是否结束来决定是否进入批模式。</p>"},
+{c:"基础",d:"入门",q:"Flink 的整体运行架构是怎样的？（从 Client 到 TaskManager）",a:"<p>典型三层结构：<b>Client</b>（构造数据流图、提交作业）→ <b>JobManager</b>（核心调度与协调，含 ResourceManager、Dispatcher、JobGraph 管理、Checkpoint 协调）→ <b>TaskManager</b>（真正执行计算任务，内含 Slot 以并行执行算子）。Client 提交后，JobManager 分配 Slot 并调度任务，TaskManager 执行算子并通过<b>网络</b>交换数据，构成有向无环图（DAG）式的分布式管道。</p>"},
+{c:"基础",d:"入门",q:"Flink 中的 JobManager 和 TaskManager 各负责什么？",a:"<p><b>JobManager</b> 是“大脑”：负责作业调度、任务分配、资源申请、Checkpoint 触发与故障恢复协调；跑在 Master 节点。&nbsp;<b>TaskManager</b> 是“工人”：真正执行算子逻辑，每个 TaskManager 有若干 <b>Slot</b>（执行单元），负责数据的读取、计算、写出。两者通过统一的 RPC 通信。</p>"},
+{c:"基础",d:"入门",q:"什么是 Slot？Slot 与并行度（Parallelism）的关系？",a:"<p>Slot 是 TaskManager 中<b>最小的资源调度单元</b>，本质上隔离了内存。一个 Job 的算子（算子子任务）被调度到 Slot 中运行。Slot 数量决定了一个 TaskManager 最多能同时运行多少并行子任务。<b>并行度 与 Slot 数量共同刻画吞吐</b>：例如并行度为 10，通常需要集群提供至少 10 个空闲 Slot。多个 Slot 可以共享（Slot Sharing），一个 TaskManager 的 Slot 越多，能承载的并行度越高。</p>"},
+{c:"基础",d:"入门",q:"Flink 的并行度有哪几个层级可以设置？优先级如何？",a:"<p>可以按<b>粒度从大到小</b>设置：作业级（env.setParallelism）→ 算子级（算子单独 parallel）→ 集群配置的默认并行度。优先级从高到低一般为：<b>代码显式指定 > 提交时的参数 > 集群默认</b>，其中算子级设置高于作业级设置。实际以最内层显式指定为准。</p>"},
+{c:"基础",d:"入门",q:"Flink 提供了哪几种 API，层次关系如何？",a:"<p>由低到高分为：<b>底层 ProcessFunction</b>（最灵活，可访问时间戳、水位线、定时器）；<b>DataStream API</b>（map/filter/flatMap/window/join 等算子）；<b>Table API / Flink SQL</b>（声明式，自动优化）；<b>上层库</b>（如 CEP 复杂事件处理、Gelly 图计算）。越上层越易用、开发效率越高，越底层越灵活、可控粒度越细。SQL 和 DataStream 可相互转换。</p>"},
+{c:"基础",d:"入门",q:"Flink 与 Hadoop/Spark 生态如何共存？",a:"<p>Flink 是<b>计算引擎</b>，不依赖也不排斥 Hadoop：它可以读取 HDFS 上的数据、把结果写回 HDFS/S3，可与 Hive 元数据集成（Flink on Hive），也能用 YARN / Kubernetes 做资源调度。实践中常组合为<b>数据湖 + 实时数仓</b>方案：用 Kafka + Flink 做实时链路，落地到 HDFS/Hive/StarRocks 等分析平台。</p>"},
+{c:"基础",d:"入门",q:"Flink 适合哪些典型业务场景？",a:"<p>典型场景：①<b>实时数仓</b>（ETL、实时指标）；②<b>实时风控</b>（欺诈检测、高频特征计算）；③<b>实时监控告警</b>（异常检测、CEP 复杂事件）；④<b>实时推荐与用户画像</b>；⑤<b>实时大屏 / 指标看板</b>；⑥<b>数据同步</b>（配合 Flink CDC 打通业务库到数仓）；⑦<b>物化视图 / 实时报表</b>。凡是对<b>低延迟、高吞吐、精确一致</b>有要求的流式场景，都是 Flink 的主场。</p>"},
+{c:"基础",d:"入门",q:"Flink 的「事件时间」与真实处理时间、摄入时间有什么区别？",a:"<p><b>事件时间（Event Time）</b>是数据产生的时刻（记录自带时间戳），反映业务真实顺序；<b>处理时间（Processing Time）</b>是算子处理该数据的系统时钟，最快但依赖机器时钟、结果不稳定；<b>摄入时间（Ingestion Time）</b>是数据进入 Flink 源算子的时间，介于两者之间。事件时间下结果<b>可重放、可复现</b>，是生产环境推荐的时间语义。</p>"},
+{c:"部署",d:"入门",q:"Flink 有哪些部署模式？",a:"<p>常见部署模式：<b>Local</b>（本地跑，用于开发）、<b>Standalone</b>（独立集群）、<b>YARN</b>（on YARN）、<b>Kubernetes</b>（原生 on K8s）。按<b>资源提供方</b>分为独立集群与托管调度（YARN/K8s）；按<b>作业生命周期</b>又分 Session（常驻共用集群）与 Per-Job/Application（作业级独立集群）。生产常用 YARN Application 或 K8s Application 模式。</p>"},
+{c:"部署",d:"入门",q:"Session 模式与 Per-Job（Application）模式如何区分？",a:"<p><b>Session</b>：先起一个常驻集群，多个作业共享 JobManager 与 TaskManager Slot，提交快、资源可复用，但作业间可能<b>资源争抢、隔离性差</b>。<b>Application/Per-Job</b>：每个作业启动一个专有集群，作业完成即释放资源，<b>隔离性好、易于按作业调资源</b>，适合生产上比较重要的作业。</p>"},
+{c:"部署",d:"入门",q:"Flink 作业是如何被提交和执行的？",a:"<p>以 YARN 模式为例：Client 生成 <b>JobGraph</b> 提交给 Dispatcher → JobManager 将 JobGraph 转成 <b>ExecutionGraph</b> → ResourceManager 申请并分配 <b>Slot</b> → 调度器把算子子任务部署到 TaskManager 的 Slot 中执行，子任务间建立物理连接传输数据，直到整个 DAG 运行结束。</p>"},
+{c:"部署",d:"入门",q:"如何查看一个 Flink 作业是否在正常运行？",a:"<p>Web UI（JobManager 的 Dashboard）查看作业状态（RUNNING）、每个算子的并行度、Bytes/S，是否出现 <b>Backpressure</b>；也可以看 <b>Checkpoint 是否成功</b>（容忍失败次数是否超限）、Metrics 中处理延迟与吞吐、日志是否有 <b>ERROR / 反序列化失败</b>。关键看：作业不回退、Checkpoint 稳定成功、吞吐符合预期。</p>"},
+{c:"部署",d:"入门",q:"Flink 常用哪些命令与 CLI 工具？",a:"<p>核心是 <b>flink run / flink run-application</b> 提交作业、<b>flink cancel / stop</b> 取消作业（stop 可做到 graceful + savepoint）、<b>flink savepoint</b> 操作保存点、<b>flink list</b> 列出运行中作业。配合 REST API（JobManager 的 8081 端口）可查询作业与集群状态。SQL 作业常用 <b>sql-client</b>。</p>"},
+{c:"部署",d:"入门",q:"Flink 的内存配置有哪些主要参数？",a:"<p>TaskManager 侧：<b>taskmanager.memory.process.size</b>（总进程内存）、<b>framework.heap</b>（框架堆）、<b>taskmanager.memory.managed.size</b>（托管内存，用于状态后端与排序）、<b>taskmanager.memory.network</b>（网络缓冲）。JobManager 侧：<b>jobmanager.memory.heap.size</b>。配置时需保证 JVM 元空间（Metaspace）、Overhead 等不被遗漏，遵循“总进程内存 = 堆 + 托管 + 网络 + 框架 + Metaspace + Overhead”的划分。</p>"},
+{c:"部署",d:"入门",q:"Flink 的作业如何优雅停止并保存当前状态？",a:"<p>使用 <b>flink stop --savepointPath ... jobId</b> 触发 Stop-with-Savepoint：停止前先做一次 <b>Savepoint</b>（快照），随后作业正常退出。之后可基于该 Savepoint 恢复作业（flink run -s），实现<b>状态不丢失</b>的状态变更、版本升级或有计划的重启。注意要确保作业可支持这种协调式停止。</p>"},
+{c:"部署",d:"入门",q:"日常运维中如何做 Flink 作业的监控告警？",a:"<p>开启指标：作业失败率、Checkpoint 耗时与失败次数、延迟、吞吐、当前处理水位（CurrentTime - Watermark）判断是否“卡住”、<b>反压</b>程度、GC 时间、磁盘/内存使用。方式：接入 Prometheus + Grafana 或 Flink Web 指标，配置规则告警；剧本上建立<b>任务失败自动重启 + 重启次数超限告警</b>、<b>Checkpoint 连续失败告警</b>、<b>指标落入低频/停滞告警</b>。</p>"},
+{c:"编程",d:"入门",q:"DataStream 编程中常见的 Source 有哪些？如何自定义？",a:"<p>内置 Source：<b>集合/文件 Source</b>（fromCollection、readTextFile）、<b>Socket</b>（用于调试）、<b>Kafka</b>等连接器 Source。自定义需要实现 <b>SourceFunction</b>（run/cancel 方法）来持续 emit，或更推荐的 <b>Source API（接口化、支持 checkpoints）</b>如 SplitReader；生产大量使用 KafkaSource 等成熟 Connector。</p>"},
+{c:"编程",d:"入门",q:"map / flatMap / filter / keyBy / reduce 分别做什么？",a:"<p><b>map</b>：一对一转换；<b>flatMap</b>：一对零到多（可同时产出多条或丢弃）；<b>filter</b>：按条件过滤；<b>keyBy</b>：按 key 分组得到 KeyedStream（是后续状态和窗口的基础，实质是 hash 分区）；<b>reduce</b>：对分组内元素两两聚合（等价于求累积值的一种）。它们组合起来就能完成大部分转换逻辑。</p>"},
+{c:"编程",d:"入门",q:"keyBy 底层是怎么分区的？KeyedStream 和 DataStream 有何区别？",a:"<p>keyBy 对每条数据的 key 做 <b>哈希取模</b>（按并行度），决定路由到哪个下游子任务，保证相同 key 的数据进入<b>同一并行子任务</b>。KeyedStream 区别于普通 DataStream 在于：它带上了 key 语义，因此可以<b>按 key 隔离状态</b>、访问状态，并且支持 Keyed Window，从而做按用户/商品维度的统计与关联。</p>"},
+{c:"编程",d:"入门",q:"connect 和 union 的区别是什么？",a:"<p><b>union</b> 合并<b>同类型</b>流成为一条流（类型必须一致，不做匹配）；<b>connect</b> 连接<b>两种不同类型</b>的流，得到 ConnectedStreams，再用 CoProcessFunction 按 key 匹配处理，双方<b>分别维护各自的状态</b>。需要“两条不同类型数据流做关联/关联状态”时用 connect；只是把同形态数据流拼接时用 union。</p>"},
+{c:"编程",d:"入门",q:"什么是广播状态（Broadcast State）？适合什么场景？",a:"<p>Broadcast State 让<b>每条数据都带着一份同一配置/维表</b>，把变化不频繁的<b>配置流广播</b>给所有下游：每个下游子任务都有广播出来的完整配置状态，普通数据流可随时读取。典型场景：动态规则（如风控规则切换）、动态阈值、黑白名单、维表更新。<b>注意</b>：广播状态只允许只读式使用，写入靠广播流。</p>"},
+{c:"编程",d:"入门",q:"RichFunction 和普通 Function 有何不同？open/close 方法的作用？",a:"<p>RichFunction（RichMapFunction、RichFlatMapFunction 等）多出 <b>open/close 生命周期</b>回调，并提供 <b>getRuntimeContext()</b>（可拿并行度、注册状态、定时器等）。<b>open</b> 在算子初始化时调用一次，适合创建连接池/初始化字段/注册状态；<b>close</b> 在算子结束释放资源（如关闭连接）。比普通无状态函数更适合做有状态、需要外部资源的算子。</p>"},
+{c:"编程",d:"入门",q:"Flink 的类型系统与 TypeInformation 是什么？",a:"<p>Flink 需要了解数据类型来完成<b>序列化、TypeErasure 处理、状态管理</b>。核心是 <b>TypeInformation</b>，Flink 会自动进行类型推导（如 BasicTypeInfo、Tuple/Row、PojoTypeInfo、GenericTypeInfo）。若推导不出（如范型丢失），会退化成 Kryo 泛型序列化（慢且体积大）。必要时用 <b>TypeHint</b> 显式指定类型信息。</p>"},
+{c:"编程",d:"入门",q:"map 之后类型信息丢失怎么办？TypeHint 如何用？",a:"<p>遇到 <b>泛型擦除</b>（如返回 List&lt;T&gt;）Flink 无法精确推导时，可用 <b>Returns / TypeHint</b> 显式给出，例如 map(...).returns(<b>TypeInformation.of(new TypeHint&lt;Tuple2&lt;String,Double&gt;&gt;(){})</b>)。这能让 Flink 选择高效的序列化方案而非退回 Kryo，减少序列化开销与堆外内存压力。</p>"},
+{c:"编程",d:"入门",q:"常见 Sink 有哪些？如何自定义 Sink？",a:"<p>内置/Rich Connector：<b>Kafka、JDBC、HBase、Redis、ES、FileSystem、StarRocks</b> 等。自定义一般实现 <b>SinkFunction</b>（无状态）或继承 <b>RichSinkFunction</b> 在 open 里建连接、invoke 里写数据、close 关连接。生产更多直接用连接器自带的 Sink，注意开启<b>事务/幂等</b>以配合精确一次。</p>"},
+{c:"编程",d:"入门",q:"「侧输出流」（Side Output）是做什么的？",a:"<p>侧输出让一个算子<b>除主输出外还能输出多路旁路数据</b>，用 OutputTag 标记。典型场景：<b>迟到数据</b>分流晚到的元素单独处理、异常/脏数据单独落盘分析、把“不合格记录”与正常结果分开发。结合 process 用 context.output(tag, data) 写出，下游再 connect 处理。</p>"},
+{c:"编程",d:"入门",q:"iterate / 迭代流是怎么工作的？",a:"<p>迭代流用 <b>iterate()</b> 把一部分数据<b>回送到算子头部形成反馈环</b>，常配合 maxIterationCount 限制次数，用于迭代算法（如 PageRank、聚类）。注意迭代会导致<b>数据不断回环</b>，易引发状态膨胀与延迟，需要设置合理最大迭代次数并在某些条件下终止。</p>"},
+{c:"编程",d:"入门",q:"DataStream 中如何实现“每 N 条一个窗口”或“间隔型聚合”？",a:"<p>可以用 <b>countWindow</b>（按条数，滚动/滑动）实现“每 N 条”；更通用的做法是<b>process + count 自增判断</b>，或者在 SQL 里用 <b>OVER 聚合 / 窗口函数</b>实现累计值。条数窗口适合流量均匀、对时间不敏感的场景。</p>"},
+{c:"编程",d:"入门",q:"如何把多个上游算子的结果做合并且保持各算子状态？",a:"<p>若类型相同用 <b>union</b>；不同类型且需要 key-by 关联用 <b>connect → keyBy → CoProcessFunction（或 CoFlatMap）</b>，在 CoProcessFunction 里各维护自身状态并在某方来临时读对方状态合并输出。这种方式常用于<b>双流 Join / 流转维度关联</b>。</p>"},
+{c:"编程",d:"入门",q:"Flink 中数据的序列化为什么比 Kryo 快？",a:"<p>Flink 自带 <b>类型感知的二进制序列化</b>：因为编译期已知 Schema，采用<b>固定长度/紧凑布局</b>、避免反射、直接在 MemorySegment 上读写，体积小且无需 GC 拷贝。<b>Kryo</b> 是通用的 Java 序列化，依赖反射、writeObject/readObject，慢且产生更多中间对象。因此应尽量保证类型可被精确推导并用 Flink 自带序列化。</p>"},
+{c:"编程",d:"入门",q:"怎么判断一个算子是否需要“状态”？哪些算子天然有状态？",a:"<p>需要跨多条数据<b>记住过去信息</b>就需要状态。天然有状态的算子：<b>keyBy 后的聚合（sum/reduce）</b>、<b>Window</b>、<b>Join</b>、<b>自定义 ValueState/ListState</b> 的算子、<b>Cep 模式检测</b>等。无状态的 map/filter/flatMap 不需状态，可并行度无限扩展；有状态算子要考虑状态大小与恢复。</p>"},
+{c:"窗口",d:"入门",q:"什么是 Window？为什么流处理需要窗口？",a:"<p>窗口把<b>无界流切分成有界的“片段”</b>，从而可以在片段内做聚合统计（如每分钟的成交量、10 分钟的 UV）。因为无界流无法无限等数据，必须用窗口把<b>时间或条数范围</b>钉下来，在窗口结束时触发计算并输出，之后窗口内容即可释放。核心参数是<b>窗口大小</b>与<b>滑动步长</b>。</p>"},
+{c:"窗口",d:"入门",q:"Flink 有哪几类窗口？各自特点是什么？",a:"<p>①<b>滚动窗口（Tumbling）</b>：大小固定互不重叠，如 5 分钟一个；②<b>滑动窗口（Sliding）</b>：固定大小 + 滑动步长，允许重叠，如 5 分钟窗口每 1 分钟滑一次（一条数据可能在多个窗口里）；③<b>会话窗口（Session）</b>：按不活跃间隔（gap）动态分段；④<b>全局窗口（Global）</b>：不按时间边界，需自定义 Trigger。按 key 又分 Keyed Window 与非 Keyed Window。</p>"},
+{c:"窗口",d:"入门",q:"滚动窗口、滑动窗口怎么选？各参数怎么配？",a:"<p>滚动窗口适合<b>固定周期汇总</b>（如每小时订单量），无重叠、结果简洁；滑动窗口适合<b>需要更高时效性的滑窗统计</b>（如近 5 分钟每 30 秒刷新）。参数：滚动只需 <b>.window(TumblingEventTimeWindows.of(Time.minutes(5)))</b>；滑动需 <b>size(5min) + slide(30s)</b>，注意<b>滑动子窗口重叠会把一条数据复制到多个窗口</b>，开销与延迟要权衡。</p>"},
+{c:"窗口",d:"入门",q:"Keyed Window 与 non-keyed Window 的区别？",a:"<p><b>Keyed Window</b>（keyBy 后开窗）每个 key 一份独立的窗口，状态按 key 隔离、可并行分片，是最常用方式；<b>non-keyed Window</b>（直接 windowAll）把整条流看作一个组，所有数据进同一窗口，<b>并行度为 1</b>、有单点瓶颈且状态集中。能用 Keyed 就用 Keyed。</p>"},
+{c:"窗口",d:"入门",q:"窗口的分配器（WindowAssigner）与触发器（Trigger）各管什么？",a:"<p><b>WindowAssigner</b> 决定<b>每条数据被分到哪些窗口</b>（滚动/滑动/会话），即窗口的位置与归属；<b>Trigger</b> 决定<b>窗口何时开始/触发计算/清除</b>（时间到触发、条数触发、或自定义）。两者配合：assigner 定“在哪聚合”，trigger 定“何时算、何时算完清掉”。</p>"},
+{c:"窗口",d:"入门",q:"窗口函数 有哪些？增量聚合与全量聚合有何区别？",a:"<p>窗口函数分两类：<b>增量聚合</b>（ReduceFunction、AggregateFunction）——数据一到就<b>边来边算攒中间值</b>，窗口结束仅输出最终结果，内存占用小、效率高；<b>全量聚合</b>（ProcessWindowFunction、apply）——先缓存窗口内<b>全部数据</b>，窗口结束时统一遍历计算，灵活但缓存开销大。可按“能否增量来计算”混用（先增量+ProcessWindowFunction聚合最终值）。</p>"},
+{c:"窗口",d:"入门",q:"会话窗口的 gap 参数是怎么确定窗口边界的？",a:"<p>Session 窗口没有固定时长，而是<b>当两次事件间隔超过 gap（如 idle 30 秒）时切一个新窗口</b>，gap 内的连续事件归为同一窗口。gap 太大会延迟窗口关闭（结果慢），太小会切得过碎。Flink 还支持<b>动态会话间隔</b>（根据 key 配置 gap），用窗口合并机制把相邻窗口合并。</p>"},
+{c:"窗口",d:"入门",q:"迟到数据如何处理？allowedLateness 与 side output 怎么配合？",a:"<p>数据晚于窗口结束时间到达叫<b>迟到数据（late data）</b>。默认晚到数据被丢弃，可用 <b>allowedLateness(Time)</b> 给窗口<b>一段等待期</b>，晚到数据会<b>再次触发窗口计算</b>（以更新结果），等待期后仍晚的用 <b>侧输出流</b>捕获单独处理。这样兼顾<b>及时性与准确率</b>。</p>"},
+{c:"窗口",d:"入门",q:"窗口计算中的「重算/更新」机制是怎样的？",a:"<p>当使用 <b>allowedLateness</b> 时，窗口在首次触发后会再等待一段时间，期间每来一条迟到的对应数据，若窗口（已标记 pending）会<b>再次触发窗口函数重新计算并输出更新</b>。更新机制依靠窗口的 <b>State（增量/缓存）</b>保留中间结果，直到窗口最终被 purge 或状态清理。</p>"},
+{c:"窗口",d:"入门",q:"Event Time 下窗口为什么可能“不关闭”？如何根治？",a:"<p>因为<b>水位线只有前进才触发窗口关闭</b>。若某个 key 的数据长时间不来或水位线不推进，窗口就一直 open（内存与状态积压）。根治手段：<b>监控 idle source 并配置 withIdleness</b> 防止某些分区无数据导致水位停滞；设置合理的 <b>allowedLateness</b>；对长时间不触发的大窗口做<b>状态 TTL / 主动清窗口</b>。</p>"},
+{c:"窗口",d:"入门",q:"GlobalWindow 外如何使用？",a:"<p><b>GlobalWindows.assigner</b> 把所有数据丢进同一个不按时间切分的全局窗口，必须<b>自定义 Trigger</b>（比如每 1000 条触发一次），否则窗口永远不会触发计算。适合需要“非时间维度”的自定义分组处理，但要自行做好<b>状态与清除</b>管理。</p>"},
+{c:"窗口",d:"入门",q:"什么是 Evictor？加了它有什么影响？",a:"<p><b>Evictor</b> 在窗口触发前<b>从窗口缓存中移除部分元素</b>（如只保留最后 N 条、或移除某些条件元素），作用于全量窗口函数之前。它让窗口内存更可控，但会<b>破坏增量聚合的意义</b>（因为要先缓存全部数据才能驱逐），性能开销大，一般仅在全量窗口里用。</p>"},
+{c:"窗口",d:"入门",q:"滑动窗口中间状态是如何存储的？为什么一条数据会在多个窗口算多次？",a:"<p>窗口计算基于<b>窗口内数据的聚合中间值（Segment/Accumulator）</b>以状态保存在相应 key 下。滑动窗口存在<b>重叠</b>，同一条数据落在多个相邻的滑动子窗口，就会<b>分别被计入每个窗口</b>（各自独立聚合），所以“算多次”是滑窗语义的必然结果。重叠越多越费资源。</p>"},
+{c:"窗口",d:"入门",q:"如何用 SQL 表达滚动 / 滑动 / 会话窗口？",a:"<p>Flink SQL 用 <b>GROUP BY TUMBLE/ HOP / SESSION</b> + 时间字段表达窗口：<br>滚动：<b>TUMBLE(time_attr, INTERVAL '5' MINUTE)</b>；<br>滑动：<b>HOP(time_attr, INTERVAL '30' SECOND, INTERVAL '5' MINUTE)</b>（30s 滑一遍、5 分钟长）；<br>会话：<b>SESSION(time_attr, INTERVAL '10' MINUTE)</b>。分组时把窗口伪列（window_start/window_end）加入 GROUP BY。</p>"},
+{c:"窗口",d:"入门",q:"窗口内做 TopN 统计有什么推荐做法？",a:"<p>在窗口/PROCESS 里先做<b>增量聚合</b>得到每个 key 的统计值，再用 <b>ProcessAllWindowFunction / 会话级双窗口</b>或 SQL 中的 <b>ROW_NUMBER() / order by + rang between</b> 取前 N。大数据量时建议<b>先做 group 再在窗口中 topN</b>，避免全量缓存；结果量大时再二次去重/排名。</p>"},
+{c:"窗口",d:"入门",q:"窗口太多/窗口状态积压导致的 OOM 怎么预防？",a:"<p>① 合理设置<b>窗口大小与 allowedLateness</b>，避免窗口长期不关闭；② 使用<b>增量聚合</b>减少缓存；③ 开启<b>状态 TTL</b> 控制状态生命周期；④ 监控<b>numLateRecordsDropped / Window 数量</b>；⑤ 排查否存在<b>滑动步长过小</b>导致窗口爆炸；⑥ 保证 idle source 换 watermark 推进，防止窗口“永远开”着。</p>"},
+{c:"水位",d:"入门",q:"什么是 Watermark（水位线）？",a:"<p>Watermark 是嵌入在事件流里的<b>特殊时间标记</b>，表示“到某个时间戳为止的数据已经<b>基本全部到达</b>”，后续事件时间早于该水位线的数据将被视为迟到。它用“最大事件时间 - 允许的乱序度/延迟”生成，是 Flink 在<b>事件时间内判定窗口何时可触发</b>的关键。</p>"},
+{c:"水位",d:"入门",q:"Watermark 是怎么推进的？在并行环境中如何汇总？",a:"<p>每个算子根据<b>已观测到的最大事件时间 - 延迟阈值</b>推进自己的 watermark；当算子有<b>多个输入分区</b>时，取<b>所有分区的 watermark 最小值</b>作为当前的推进水位（因为最慢的分区还没到）。跨算子逐级向下传递，直到 sink。</p>"},
+{c:"水位",d:"入门",q:"为什么用事件时间就必须有 Watermark？",a:"<p>事件时间下数据可能<b>乱序或延迟</b>，若严格等“所有数据到齐”再计算，无界流就永远无法结束。Watermark 提供一种<b>“我判断足够晚、该算了”的启发式</b>：到达某一水位后，早于水位的窗口就可以固化触发。它把“等待多久”显式表达，兼顾<b>实时性与准确性的折中</b>。</p>"},
+{c:"水位",d:"入门",q:"乱序数据 + 延迟阈值固定在代码里怎么写？",a:"<p>用 <b>AssignerWithPeriodicWatermarks / BoundedOutOfOrdernessTimestampExtractor</b>：给 TimeStampAssigner 传入<b>期望的最大乱序时间</b>（如 5 秒），Flink 维护 maxTs（已见最大事件时间）并把 watermark 置为 <b>maxTs - 5s</b>。越大的乱序容忍 → 越严格的准确性但窗口关闭越晚、延迟越高。</p>"},
+{c:"水位",d:"入门",q:"Periodic 和 Punctuated 两种 Watermark 生成器有何区别？",a:"<p><b>PeriodicWatermarkGenerator</b>：<b>周期性</b>（默认 200ms）统一推进一次 watermark，实现简单、推荐；<b>PunctuatedWatermarkGenerator</b>：数据到一条就判断<b>是否更新 watermark</b>（可基于事件本身属性），适合对<b>特定事件语义</b>（如某类型消息到达即代表水位前移）精确触发。生产多用 periodic。</p>"},
+{c:"水位",d:"入门",q:"Partition 长时间没有数据，Watermark 停滞怎么办？",a:"<p>某个分区一直没数据会拖住整条流的 watermark（取最小值原则），导致整个作业窗口不触发。<b>WatermarkStrategy.withIdleness(Time)</b>/withIdleTimeout 可让<b>长时间空闲的分区”假装“已推进</b>，不再拖累全局水位；同时配合监控空闲分区数量。注意要区分“真没数据”和“上游故障”，需结合告警。</p>"},
+{c:"水位",d:"入门",q:"Watermark 会触发窗口的哪些动作？",a:"<p>当系统的 watermark 越过某窗口的<b>结束时间</b>时：① 该窗口<b>触发计算并输出结果</b>；② 若配置了 allowedLateness，窗口进入<b>迟到等待期</b>（再晚到的数据仍会触发更新）；③ watermark 越过“结束时间+allowedLateness”后，窗口<b>从状态中清除</b>。同时 watermark 会触发注册在它之上的 <b>EventTime Timer</b> 回调。</p>"},
+{c:"水位",d:"入门",q:"多并行度下，不同算子的 watermark 是如何流转与对齐的？",a:"<p>上游算子把<b>各自的 watermark 广播</b>给下游所有子任务；下游接收多个分区的 watermark 后<b>取各自数据集的最小值</b>作为本算子可见水位，再继续向下传播。因此全局水位受<b>最慢那条链路</b>制约——这是反压和数据倾斜都会间接反映到水位的原因。</p>"},
+{c:"水位",d:"入门",q:"为什么调整 watermark 延迟就能调整“准确率 vs 及时性”？",a:"<p>延迟设置相当于<b>预留的晚到容忍窗口</b>：容忍越大，被误判为迟到的数据越少、结果越接近“全量正确”，但窗口必须等更久才触发、<b>结果来得更晚</b>；容忍越小，结果更快但更可能漏掉晚到数据。实际需按业务对<b>准确性敏感度</b>设置，并可配合 allowedLateness + 侧输出来兜底。</p>"},
+{c:"水位",d:"入门",q:"Watermark 会随 Checkpoint 存储与恢复吗？",a:"<p>会。Flink 在 <b>Checkpoint 中保存当前算子的 watermark</b>，作业从快照恢复时会<b>从保存的水位继续</b>，保证恢复后不把已超过水位的数据重算、也不会重复触发窗口。<b>Savepoint/Checkpoint 恢复后窗口语义得以保持</b>，这也是事件时间可重放的关键。</p>"},
+{c:"状态",d:"入门",q:"Flink 中的「状态」指什么？为什么需要它？",a:"<p>状态是算子运行过程中<b>需要跨多条数据记住的信息</b>（计数、累计值、中间缓存、游标等）。流处理天然需要“记住过去某段信息”才能做聚合、去重、关联、窗口。有了状态，算子在<b>故障恢复、Checkpoint 备份</b>后能恢复到之前进度，保证<b>精确一次</b>。</p>"},
+{c:"状态",d:"入门",q:"ValueState / ListState / MapState / ReducingState / AggregatingState 分别怎么用？",a:"<p>都是 <b>KeyedState</b>（keyBy 后用）：<b>ValueState</b> 存单个值；<b>ListState</b> 存有序列表（常用于“攒一批”）；<b>MapState</b> 存键值映射（适合按子维度统计）；<b>ReducingState</b> 存两两 reduce 后的单个累积值；<b>AggregatingState</b> 类似但用 AggregateFunction 支持更复杂的累积结构。均通过 RuntimeContext 注册。</p>"},
+{c:"状态",d:"入门",q:"Keyed State 和 Operator State 有何区别？体现在哪？",a:"<p><b>Keyed State</b> 绑定 key，仅可在 KeyedStream 中使用，按 key 隔离、自动分片；<b>Operator State</b> 绑定整个<b>算子并行子任务</b>，不按 key、常用的如 KafkaSource 的偏移量、ListState 型。二者重启后<b>重分配方式不同</b>：KeyedState 按 key 重新哈希，OperatorState 靠 <b>Union/List redistribution</b>。</p>"},
+{c:"状态",d:"入门",q:"Flink 有哪几种状态后端（State Backend）？怎么选？",a:"<p>主要两种：<b>HashMapStateBackend</b>（存 JVM 堆，读快但受堆限制、GC 压力大、大状态易 OOM）与 <b>RocksDBStateBackend</b>（存本地磁盘，可存超大状态、支持增量快照，但读写有序列化开销）。<b>选型</b>：小状态、访存要求高用 HashMap；大状态（GB~TB 级）、要求不拖垮 JVM 用 RocksDB。还有 Legacy MemoryStateBackend/FSStateBackend 已逐步废弃。</p>"},
+{c:"状态",d:"入门",q:"RocksDBStateBackend 的原理是什么？性能和容错如何？",a:"<p>RocksDB 是<b>嵌入式的基于 LSM 的 KV 存储</b>，数据落本地磁盘（可用内存+缓存）。优点：<b>状态几乎不受 JVM 堆限制</b>、支持<b>增量 Checkpoint</b>（只上传新增/变更的 SST）、按 key 存储天然支持大数据量。缺点：序列化/反序列化开销、原生磁盘、b频繁写盘。配合内存与并发参数调优能兼顾性能。</p>"},
+{c:"状态",d:"入门",q:"状态后端 HashMap 与 RocksDB 在 Checkpoint 上有什么差异？",a:"<p>HashMapStateBackend 走 <b>堆快照（同步或异步）</b>，直接把堆上内存序列化上传，快但快照时 <b>Stop-The-World</b> 且有堆拷贝；RocksDBStateBackend 做<b>增量 / 异步快照</b>，拍出的是文件句柄（copy-on-write），对运行影响小，适合超大状态。选择时关注<b>状态规模</b>与<b>checkpoint 对业务的停顿影响</b>。</p>"},
+{c:"状态",d:"入门",q:"State TTL（状态生存时间）是做什么的？怎么配置？",a:"<p>给 KeyedState 设置<b>过期时间</b>，超过 TTL 的数据会被惰性清理（访问时不返回、后台异步清理），防止状态无限膨胀（比如用户频繁登出后 key 可被清理）。配置：<b>StateTtlConfig.newBuilder(Time.days(1)).setUpdateType(...).setStateVisibility(...)</b> 可设置按写入/读更新 TTL、是否返回过期值等。</p>"},
+{c:"状态",d:"入门",q:"Flink 的容错机制整体是怎么工作的？（一次 Checkpoint 的大致流程）",a:"<p>基于 <b>分布式快照（Chandy-Lamport 思想的 Barrier-marker 对齐）</b>：JobManager 周期性向 <b>所有 Source</b> 注入 <b>CheckpointBarrier</b>；同时保存<b>每路 Source 的偏移量</b>；barrier 随数据流在各算子间传播，算子收到后<b>对自己的状态做异步快照</b>并传给 JobManager；等<b>所有算子快照都完成</b>则本次 Checkpoint 成功。故障时从最近完成的快照<b>整体回滚重放</b>。</p>"},
+{c:"状态",d:"入门",q:"Checkpoint 对齐（Barrier Alignment）是怎么做的？",a:"<p>当并行算子某个分区先收到 barrier 而其他分区还没到时，先到的分区会<b>把后续数据暂时缓存（不处理），等所有输入分区的 barrier 都到达</b>，才继续处理并做状态快照——这称为“对齐”。对齐保证快照恰好对应某个一致点，从而实现 <b>Exactly-Once</b>。</p>"},
+{c:"状态",d:"入门",q:"Exactly-Once 和 At-Least-Once 体现在 Checkpoint 哪里？",a:"<p>差异集中在<b>是否做 barrier 对齐</b>：<b>Align 对齐 = 精确一次</b>（barrier 前数据都处理完、barrier 后数据缓存不进来）；<b>不对齐（At-Least-Once）</b> barrier 之间数据可能处理多次，快照更快但存在重复（用幂等输出兜底）。用 <b>CheckpointingMode.EXACTLY_ONCE / AT_LEAST_ONCE</b> 切换。</p>"},
+{c:"状态",d:"入门",q:"Savepoint 和 Checkpoint 有什么区别？",a:"<p><b>Checkpoint</b>：周期性自动触发的<b>容错快照</b>，一般存到配置的 checkpoint 存储，格式特定、随运行持续更新；<b>Savepoint</b>：<b>手动</b>触发的自有语义持久化，常存到分布式文件系统（HDFS/S3），格式可跨版本演进，多用于<b>升级、迁移、暂停后再恢复</b>。两者数据都有 state + 偏移量信息。</p>"},
+{c:"状态",d:"入门",q:"作业重启或升级时如何从 Checkpoint / Savepoint 恢复？",a:"<p>用 <b>flink run -s hdfs://.../savepoint ... 或 --fromSavepoint / --fromCheckpoint</b> 指定恢复点；或配置 <b>restore-strategy</b>。恢复时 JobManager 读取快照，把 <b>每个算子的状态 + 各 Source 偏移量</b>按最新算子 UID 映射回去。前提是算子边界与 UID 没被破坏（无状态变更或做了兼容演进）。</p>"},
+{c:"状态",d:"入门",q:"算子加了 UID 有什么好处？不加会怎样？",a:"<p>给算子 <b>uid(\"...\")</b> 提供了<b>稳定的状态标识</b>，即使代码中算子顺序或并行度变化，状态恢复时也能<b>按 UID 精确对位</b>。不加 UID 时 Flink 用“算子索引”推断，一旦上游新增/删除算子，<b>状态可能错位甚至无法恢复</b>。生产强烈建议给有状态算子设 uid。</p>"},
+{c:"状态",d:"入门",q:"作业并行度改变后状态如何重分布（rescaling）？",a:"<p><b>Keyed State</b> 按 key 重新 <b>哈希到新的 subTask</b>（迁移到新并行拓扑）；<b>Operator State</b> 依赖实现的重分发策略：EnableCheckpointRedistribution 的 <b>List / Union</b>（list 按序号拆分、union 则每个新任务都拿到全量）。重启时 Flink 据此重组状态，避免丢失。</p>"},
+{c:"状态",d:"入门",q:"Flink 如何实现端到端（End-to-End）的精确一次？",a:"<p>单靠引擎内精确一次还不够，还要下游写入也精确一次。方案：① <b>Two-Phase Commit（两阶段提交）</b>，支持事务的 Sink（如 Kafka、JDBC）+ 可回滚通道，Checkpoint 完成时预提交、Job 完成后全量提交；② <b>幂等写入 / 事务性 Sink（如 ES 的去重、StarRocks 用 UPSERT）</b>，重放时靠幂等覆盖。两者配合才能端到端精确一次。</p>"},
+{c:"状态",d:"入门",q:"什么场景下「非对齐 Checkpoint」（Unaligned）有用？怎么开启？",a:"<p>当出现<b>反压</b>导致 barrier 长时间对齐不上、Checkpoint 一直超时失败时，<b>Unaligned Checkpoint</b> 直接在 barrier 经过时记录<b>在途网络缓冲里的数据</b>，不做对齐，显著降低快照时长。<b>开启</b>：Flink 1.11+ <b>env.enableUnalignedCheckpoints()</b>。代价是快照体积变大（含缓冲数据）。适合大反压下的容错保障。</p>"},
+{c:"状态",d:"入门",q:"Checkpoint 避免“平时 Sink 只有 finished 时提交”的时机错位如何解决？",a:"<p>这就是<b>两阶段提交的时序问题</b>：要保证<b>快照成功所对应的数据，在恢复时也能被完整提交或回滚</b>。Flink 用 <b>Commit / abort 回调 + job 最终触发提交</b>：屏障对齐时 Sink 做 preCommit，Checkpoint 全成功后 JobManager 再对已完成并行任务做 commit；异常则 abort，保证一致性。</p>"},
+{c:"状态",d:"入门",q:"状态很大时，Checkpoint 一直失败/超时怎么排查？",a:"<p>① 提升 <b>checkpoint timeout</b> 与并存储吞吐（HDFS 写入慢）；② 持续监控，确认 <b>state.size / 各 state 增长</b>；③ 若反压导致对齐失败，改 <b>Unaligned</b> 或先解决瓶颈；④ 检查状态后端是否存了不该存的 key、是否可拆小；⑤ 观察是否某个客户单个 key 占用极端量大（key 倾斜）。</p>"},
+{c:"状态",d:"入门",q:"增量 Checkpoint 是怎么做的？对恢复有什么影响？",a:"<p>RocksDB 支持<b>只上传自上次快照以来发生变化的 SST 文件</b>（频繁的小文件合并成 5 个一次上传），大幅降低大状态快照体积与耗时。恢复时需要<b>回溯多个历史文件</b>才能重建全量状态，所以若 history 太深、损坏风险累积，可配置 <b>incremental checkpoint 保留数量</b>；代价是恢复耗时会略微增加。</p>"},
+{c:"状态",d:"入门",q:"Timer（定时器）是状态吗？会参与 Checkpoint 吗？",a:"<p>Timer 会<b>按 key 存储并参与 Checkpoint</b>（算在算子状态里）。flink 内部用优先队列按触发时间组织，恢复后继续按正确时间触发。注意 Timer 过多可能占内存/序列化到 RocksDB，需控制定时器数量并配合 TTL 清理；<b>事件时间定时器由 watermark 触发，处理时间定时器由系统时间触发</b>。</p>"},
+{c:"状态",d:"入门",q:"如何给有状态算子做「状态清理」，防止状态无限膨胀？",a:"<p>① 合理设置 <b>State TTL</b>，给过期 key 自动淘汰；② 在 <b>process 中结合 key 数量做主动清理</b>（如达到边界清空 ListState）；③ 使用 <b>Timer 注册清理事件</b>；④ 对不需要的历史键做<b>key 过期</b>语义（用事件时间 + 晚置期）。对无界 key 特别重要，否则状态/TTL/内存会持续增大。</p>"},
+{c:"状态",d:"入门",q:"Keyed State 与 RocksDB 的序列化开销为什么较高？如何优化？",a:"<p>因为状态每次读写都需<b>反序列化/序列化进 KV（byte[]）</b>，高频访问时开销明显。优化手段：① <b>减少无关状态</b>、尽量用 MapState/B<b>合理 key 结构</b>；② 仅读必要时拷贝；③ 用 <b>异步快照</b>降低 JVM 停顿；④ 增加 RocksDB block cache、适当调高内存；⑤ 大但访问少的状态放 RocksDB，热状态放 Heap（混搭需自行维护）。</p>"},
+{c:"状态",d:"入门",q:"State 与广播状态的恢复在 Upscale（扩并行度）下有何注意？",a:"<p>KeyedState 重哈希可无缝扩容；<b>OperatorState / BroadcastState 扩容时规则不同</b>：广播状态每个新槽都复制全量、天然支持；朴素的 ListState 按序号分片，扩并行度后需 <b>Union / 自定义重分布</b>。用自定义 Source 的偏移量等 OperatorState 时，务必用 <b>ListState + CheckpointedFunction</b> 保证扩缩容正确。</p>"},
+{c:"状态",d:"入门",q:"Checkpoint 的持久化存储一般放哪里？有几种配置？",a:"<p>通过 <b>state.checkpoints.storage</b> 配置，常用 <b>JobManager/Memory</b>（仅调试，重启丢）、<b>Filesystem</b>（hdfs、s3、oss，生产首选）、<b>还有本地/远程混合</b>。同时 <b>state.checkpoints.num-retained</b> 控制保留的最近快照数。生产应放分布式文件系统并与 metadata 一致。</p>"},
+{c:"状态",d:"入门",q:"为什么说 Checkpoint 需要「状态 + 偏移量」一起保存才一致？",a:"<p>计算在“数据到哪了”和“状态到哪了”之间要保持<b>原子一致</b>：如果只存状态不存 Source 偏移量，恢复时要么缺数据要么重复处理。<b>Checkpoint 同时记录每个 Source 的消费偏移量 + 算子状态</b>，恢复时从记录偏移量重放且带着对应快照状态，才能做到“回到同一个一致点”。</p>"},
+{c:"状态",d:"入门",q:"Flink 状态后端的选择会影响「批量读状态」吗？RocksDB 如何做批量扫描？",a:"<p>RocksDB 用 <b>Iterator（迭代器）</b>按 key 有序扫描，适合做批量的 MapState 遍历、TopN 等；Heap 后端直接遍历对象。批量扫描会<b>持有 RocksDBSnapshot 或防止并发修改</b>，量大时注意内存与慢查询。生产可用 raw iterator 自行按批处理。</p>"},
+{c:"状态",d:"入门",q:"状态与重启策略：什么是 FixedDelay 和 ExponentialDelay 重启？",a:"<p>故障恢复由 <b>RestartStrategy</b> 决定：<b>FixedDelay</b> 固定次数 + 固定延迟重试（适合可恢复的异常）；<b>ExponentialDelay</b> 指数退避（前几次快、之后越来越慢，防止反复失败打爆资源）；还有 <b>FailRate</b> 限频。默认配置 <b>restart-strategy.fixed-delay</b> 等，超限则作业失败并触发告警。</p>"},
+{c:"状态",d:"入门",q:"Flink 能从 Checkpoint 恢复 <b>一个算子</b>的状态吗？状态是否都是「算子级」？",a:"<p>语义上是<b>算子级/子任务级</b>：KeyedState 挂在 keyed operator 上，OperatorState 挂在算子实例上，Checkpoint 是<b>这些状态的统一快照</b>。恢复时按算子 UID/索引对位还原。<b>不能只恢复某一个算子</b>，但可以通过 Source 偏移量控制“从何时重算”——整体快照保证全局一致。</p>"},
+{c:"状态",d:"入门",q:"如果作业状态完全无法恢复，还有哪些兜底方案？",a:"<p>① 从<b>更早的 Checkpoint 或 Savepoint</b>恢复（丢最近数据但可用）；② 用 <b>changeLog</b>（Changelog State Backend）实现<b>双写状态变更日志</b>，缩短恢复时间与丢失窗口；③ 只有 Source 的偏移量时做<b>回溯窗口</b>；④ 紧急时<b>从 0 冷启动</b>重建，配合下游幂等补偿丢失区间。核心是提前做版本化 & 快照保留策略。</p>"},
+{c:"状态",d:"入门",q:"Flink 1.15+ 的 Changelog State Backend 是什么？解决什么问题？",a:"<p>Changelog（变更日志）后端把状态写操作先写到<b>本地 changelog + 后台异步提交</b>，使<b>增量恢复 / 低延迟恢复</b>成为可能：无需从完整快照重放，只需回放脱档的变更日志，恢复更快、快照更小。适合对 RTO（恢复时间目标）敏感、状态大的作业。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 与 DataStream API 各自适合什么场景？",a:"<p><b>Flink SQL</b>：声明式、开发快、自动优化，适合绝大多数<b>常规 ETL、报表聚合、窗口统计、Join/维表</b>；且与数仓/Catalog 一体，便于运维。<b>DataStream API</b>：需要<b>精细控制</b>（自定义逻辑、复杂状态、细粒度时序、性能极致调试）时更强。实际常<b>混合</b>：SQL 写主体、个别算子用 ProcessFunction 下沉。</p>"},
+{c:"表",d:"入门",q:"StreamTableEnvironment / TableEnvironment 有什么区别？",a:"<p><b>StreamTableEnvironment</b> 专用于<b>流作业</b>，能注册流数据为表、把表转成 DataStream，支持<b>事件时间/处理时间</b>与 changelog；<b>TableEnvironment</b> 是<b>统一的运行时环境</b>，可用于批/流，是 Flink 1.x 起推荐的主入口（按运行模式决定 batch/stream）。新版本都用 TableEnvironment + StreamExecutionEnvironment 组合。</p>"},
+{c:"表",d:"入门",q:"在 Flink SQL 里事件时间/处理时间属性怎么声明？",a:"<p>建 DDL 时用辅助列指定：<b>事件时间</b>需声明一个 <b>WATERMARK FOR ts AS ts - INTERVAL '5' SECOND</b>（生成 watermark）；<b>处理时间</b>声明 <b>pt AS PROCTIME()</b>（写列类型即可）。时间属性是<b>窗口与时间函数</b>的前提，且必须是单独的辅助/时间列。</p>"},
+{c:"表",d:"入门",q:"什么是动态表（Dynamic Table）？与流的关系？",a:"<p>动态表是<b>流在 Table 世界的视图</b>：流是不断追加的<b>增量变化序列</b>。动态表随时间持续<b>追加行（Append）或更新行（Upsert/Delete）</b>。每次流里面来一条数据 → 表变化一次；SQL 会在每个增量上<b>重新计算并产出新的结果表变化</b>，这些变化再次被转成 changelog 流输出。它把<b>流 = 变化流</b>一致化。</p>"},
+{c:"表",d:"入门",q:"Catalog 在 Flink SQL 里起什么作用？如何与 Hive 集成？",a:"<p>Catalog 提供<b>统一的元数据管理</b>（表、视图、函数、数据库），使用户无需重复建表就能<b>引用已有表结构</b>。集成 Hive 用 <b>HiveCatalog</b>：注册后可直接<b>读写 Hive 表、使用 Hive UDF、利用分区</b>，实现“批流一体 + 复用数仓元数据”，是 Flink on Hive / 湖仓的关键。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 中怎么建「元数据可直接映射」的连接器表？",a:"<p>用 <b>CREATE TABLE ... WITH ('connector'='...')</b> 声明连接器与参数（如 {&#39;connector&#39;:&#39;kafka&#39;,&#39;topic&#39;:&#39;...&#39;}），并定义 schema（字段、主键、时间属性）。这就是<b>声明式连接器表</b>：结构（schema）与物理来源（connector）解耦，SQL 直接对它查询。还可 <b>CREATE TABLE LIKE</b> 复用已有表的 schema。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 如何做「流上关联维度」（Lookup Join / Temporal Join）？",a:"<p>① <b>Lookup Join</b>：用 <b>FOR SYSTEM_TIME AS OF</b> 在<b>每行维度读取时实时去外部 KV/MySQL</b> 补维度字段（常用）；② <b>Temporal Join（时态关联）</b>：关联 Versioned / 时态表（如 CDC 维度流 + 处理时间）或<b>区间关联（Interval Join）</b>按事件时间取有效区间值。事实表可与维度实时关联。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 里 TopN 和去重怎么写？",a:"<p>用窗口函数：<b>TopN</b>：<b>SELECT * FROM (SELECT ROW_NUMBER() OVER (PARTITION BY cate ORDER BY cnt DESC) rn ...) WHERE rn &lt;= 100</b>；<b>去重</b>：<b>ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY ts) = 1</b> 取每用户第一条（或按规则取最新）并用 <b>状态保留</b>控制 key。它们都依赖 <b>rank/去重状态</b>，注意状态管理。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 中 OVER（窗口函数）聚合怎么用？和普通窗口区别？",a:"<p><b>OVER 聚合</b>是<b>游标式累计</b>：对每个数据行，窗口是“它到分区内一个<b>有界前向范围</b>”。写法：<b>SUM(x) OVER (PARTITION BY k ORDER BY ts RANGE/RROWS BETWEEN ... )</b>。与普通滚动/滑动窗口不同，OVER 结果是<b>每来一条就输出一条累计值</b>，适合移动平均、累计和、比率分析，不按固定边界切分。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 支持哪些 Join？各自使用与限制？",a:"<p>① <b>Regular Join（普通 Join）</b>：按 join 条件持续匹配，需<b>保留两侧全部状态</b>，风险是无界；② <b>Interval Join</b>：把匹配局限在<b>时间区间内</b>，状态可裁剪（<b>必须显式时间上下界</b>）；③ <b>Temporal / Lookup Join</b>：按时间获取维度当前值；④ <b>维表 Join</b> 靠外部存储。看是否<b>有界（Interval/Temporal）</b>决定能否长跑。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 的累加聚合（Cumulative）是什么？用于什么？",a:"<p>累计聚合 <b>CUMULATE</b> 在一个大窗口内<b>每个 interval 输出一次“到目前为止的累计值”</b>（如每天 24 个整点时刻的当日累计）。相比直接 TUMBLE 只有结尾一次，CUMULATE 满足“我要<b>实时看趋势、且累计不重置</b>”的看板/监控需求。写法 <b>CUMULATE(ts, INTERVAL '1' HOUR, INTERVAL '1' DAY)</b>。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 中如何对结果做「仅保留最新」的 upsert 语义？",a:"<p>给表声明<b>主键（PRIMARY KEY）</b>并让对应 sink 支持<b>UPSERT</b>（如 Kafka 上游是 changelog、StarRocks/MySQL 用 UPSERT）。Flink 会把 changelog（+I / -U / +U / -D）按主键转成 upsert 写下游，从而最终<b>只有每主键一行最新值</b>。适合 Ctas/维表物化等。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 与流批一体（Batch/Streaming 双模式）如何理解？",a:"<p>同一套 SQL 可在<b>批或流</b>两种模式下运行，正对数据是“有界”还是“无界”选择。Flink planner（Blink 之后）统一了语义与优化，强制 <b>batch：一次性输出；streaming：增量输出</b>。开发时可选 <b>ExecutionMode（batch/stream/auto）</b>，让一套表逻辑既能离线全量也能实时增量跑。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 相比手写 DataStream 的性能/优化优势在哪？",a:"<p>Flink SQL 由 <b>Planner/Optimizer</b> 做<b>关系优化</b>：谓词下推、列裁剪、投影裁剪、常数折叠、Join 重排序(Reorder)、自适应算子调整、mini-batch 聚合等；还能用 <b>状态/算子自动打包</b>。相比手写能<b>避免重复计算、减少读写、自动列裁剪</b>，多数常规场景在<b>性能下限以上</b>且省人力。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 中如何在无界跟维表之间避免 Join 状态爆炸？",a:"<p>① 优先用 <b>Lookup Join（实时查外部存储）</b>替代无界 regex，因为不需缓存全量；② 用 <b>Interval Join</b> 限定时间窗使状态可 TTL；③ 给正则 join 配置 <b>状态 TTL / 只保留近 N 天</b>；④ 维表 ChangeLog 只维护必要 key。核心思路：<b>让状态有界、可过期</b>。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 如何调整 mini-batch / 输出频率提高吞吐？",a:"<p>开启 <b>table.exec.mini-batch.enabled=true</b>、<b>mini-batch.size</b>、<b>allocat latency</b>，让 Flink <b>攒一批再聚合输出</b>，显著降状态访问与 sink 压力。注意 mini-batch 会<b>增大结果延迟</b>（最多一个 batch 间隔），适合对延迟不敏感、吞吐优先的聚合。<b>local-global 优化（table.exec.allow-null-key）</b> 也有利于倾斜。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 中「校准水位线与<time_attr>」的要求有哪些约束？",a:"<p>① 时间属性必须<b>声明为具体列</b>（或 PROCTIME/时间列），不能在查询里随意用；② <b>事件时间列必须是 TIMESTAMP(3)</b> 等且要有 WATERMARK；③ 窗口/时间函数<b>必须引 time_attr，不能引普通数值字段</b>；④ 若从 DataStream 到表，需在 toTable 时显式指定时间属性列。SQL 中时间语义处理严格、提前规划。</p>"},
+{c:"表",d:"入门",q:"Flink SQL 中如何做「列裁剪」减少吞吐与写放大？",a:"<p>默认 optimizer 会 <b>列裁剪</b>——只保留下游需要的列，减少序列化与网络体积。开发时<b>SELECT 显式选列</b>、避免 <b>SELECT *</b>、去掉不用的临时计算、把「写宽表后 Sink 只取部分字段」下沉到 SQL，能把写放大与内存压下去。</p>"},
+{c:"函数",d:"入门",q:"UDF / UDAF / UDTF 分别是什么？各自使用场景？",a:"<p><b>UDF</b>（标量函数）：一入一出（如 trim、加密），最常用；<b>UDAF</b>（聚合函数）：多行聚成一值（如自定义 TopN、加权求值），基于<b>Accumulator</b>；<b>UDTF</b>（表函数）：一行展开并产出多行（如 JSON 解析、日志展开）。注册后即可在 SQL 中当作普通函数用，是 Flink SQL 扩展能力的核心。</p>"},
+{c:"函数",d:"入门",q:"自定义 UDF 时 open / close / eval 各承担什么？",a:"<p>继承 RichFunction 类，<b>open</b> 在算子初始化调用：创建<b>外部连接、查维度缓存、注册状态</b>；<b>eval</b> 是<b>实际计算</b>方法（每行调用）；<b>close</b> 释放资源。若用<b>无状态纯函数</b>可直接实现 <b>Function</b> 接口，但需保证<b>幂等、确定性</b>，避免状态在并行间不一致。</p>"},
+{c:"函数",d:"入门",q:"UDAF 的 Accumulator 是什么？为什么用它？",a:"<p>UDAF 用 <b>Accumulator</b> 保存<b>中间聚合状态</b>（如计 sum 用 (count,value)）。每一行调用 <b>accumulate()</b> 更新累积器，最终 <b>getValue()</b> 返回结果。因为后续<b>增量更新而不存全量数据</b>，它的<b>内存稳定、可分布式合并（merge）</b>，配合并行聚合与 TTL，是可扩展聚合的关键设计。</p>"},
+{c:"函数",d:"入门",q:"ProcessFunction 比普通 map 强在哪？",a:"<p>ProcessFunction 提供<b>上下文 Context</b>，可拿到<b>当前 watermark、定时器（registerEventTime/ProcessingTimeTimer）</b>、<b>侧输出（SideOutput）</b> 与<b>状态访问</b>。因此能写“等 30 秒无事件则输出告警”“超市场价发预警”“按每个 key 维护滑动状态+计划清理”这类<b>依赖时序的复杂逻辑</b>，是底层能力之王。</p>"},
+{c:"函数",d:"入门",q:"KeyedProcessFunction 的 onTimer 与状态如何配合处理“多久无数据”告警？",a:"<p>在每条数据到来时<b>给当前 key 注册一个事件时间/处理时间定时器</b>（到“上次活动+超时阈值”），并覆盖之前定时器；在 <b>onTimer</b> 里判断当前时间是否已超时且<b>未在此前被新数据刷新</b>，若是则输出告警并清除过期状态。这样实现<b>每个 key 的 idle 检测/会话超时</b>。</p>"},
+{c:"函数",d:"入门",q:"CoProcessFunction 与双流 connect 用在什么典型场景？",a:"<p>connect + keyBy 后双流处理：用它维护<b>两路各自状态</b>并相互感知。典型<b>即席关联</b>：左流来数据时查右流最近状态补 join，Done（也可反过来）；或做<b>事件配对</b>（下单与支付）、<b>版本对齐</b>。几乎等价于“自写双流 join”，适合 SQL 表达不了或性能要求精细的场景。</p>"},
+{c:"函数",d:"入门",q:"UDF 的幂等/确定性为什么重要？与状态恢复有何关系？",a:"<p>若 UDF <b>不幂等或随机</b>（依赖系统时钟、随机数、外部可变状态），在<b>重放恢复</b>（exactly-once）时会导致结果与快照对应不一致、复制现场困难、测试不稳定。<b>原则</b>：纯函数式（输入决定输出）+ 无副作用 + 不依赖非确定源；需要外部数据时通过<b>状态/广播或确定性查询</b>接入。</p>"},
+{c:"函数",d:"入门",q:"ProcessFunction 里的定时器能用于「事件时间内唤醒某 key」吗？为什么注意状态？",a:"<p>能。事件时间定时器（registerEventTimeTimer）在<b>水位超过设定时间</b>时触发，非常适合管 keyed 时间语义。注意：① 定时器<b>按 key 存储在状态</b>，太多会膨胀；② 必须在每条相关数据上<b>重新评估/清理旧定时器</b>；③ 配合 StateTTL 和一次性触发 flags，避免重复与无法触发。</p>"},
+{c:"连接",d:"入门",q:"Flink 连接器（Connector）生态一般怎么划分？",a:"<p>按角色分<b>Source / Sink</b>（有的兼有）；按系统分<b>消息队列</b>（Kafka/Pulsar/RMQ）、<b>数据存储</b>（JDBC/MYSQL/PG/HBase/ES/Redis/Filesystem）、<b>数仓/湖</b>（Hive/Iceberg/Paimon/StarRocks）、<b>流式平台</b>（CDC、Flume、MQTT）。连接器负责<b>序列化、偏移量管理、checkpoint 语义</b>接入，让引擎能读写成百上千种系统而不用改算子。</p>"},
+{c:"连接",d:"入门",q:"Flink Kafka Consumer 怎么配置并行度与 offset？",a:"<p>指定 <b>KafkaSource.builder().setBootstrap(...).setTopics(...).setGroupId(...).setStartingOffsets(...)</b>，并行度可大于分区数（多 Kafka 分区会摊到多个 subtask）。offset 管理默认走 <b>Checkpoint</b>（从快照恢复替代 Kafka 自身 offset），启动位置可 <b>earliest/latest/committed/specific</b>。</p>"},
+{c:"连接",d:"入门",q:"Flink Kafka 如何保证「精确一次」消费？",a:"<p>① <b>Source 侧</b>：KafkaSource 做 checkpoint 时<b>保存每个分区已消费的 offset</b>，重启后从该 offset 恢复，不丢数据；② <b>Sink 侧</b>（如 Kafka→Kafka）：用<b>两阶段提交（Exactly-Once 事务）</b>事务性 producer，Checkpoint 成功才 commit 事务，失败则 abort；配合 <b>kafka 事务超时与隔离级别（read_committed）</b>即可端到端精确一次。</p>"},
+{c:"连接",d:"入门",q:"Flink 与 Kafka 的并行度应该如何匹配演进？",a:"<p>一般<b>Kafka Source 并行度 ≤ 分区数</b>（多了空转），Flink 算子的并行度按<b>数据量与算子复杂度</b>设计，与分区数解耦（网络有 redistrib）。扩容时可<b>增加算子并行</b>，但 source 并行度受分区数上限；若需 source 更高并行，需<b>先加 Kafka 分区</b>。生产以“多分区 + 降并发分担”配合数据倾斜治理。</p>"},
+{c:"连接",d:"入门",q:"Kafka Topic 动态分区（新增分区）后 Flink 怎么办？",a:"<p>Flink KafkaSource 会<b>周期性发现新增分区并自动纳入消费</b>（默认开启 discovery，scan watermarke 处理新增分区），新分区从配置的起始位置开始。注意：新增分区<b>不会触发 checkpoint 的 offset 缺失</b>，通常从 earliest 或最新补数据，需按业务决定。Sink 发布新分区也自动均衡。</p>"},
+{c:"连接",d:"入门",q:"Flink JDBC Sink 有哪些优化点？",a:"<p>① 用 <b>setBatchInterval/大小</b>攒批写入降低连接开销；② 关闭重连、预编译；③ 合理并行度（数据库吞吐上限）；④ 大表写用 <b>分片/基于主键优化</b>；⑤ 结合 <b>幂等 UPSERT（ON DUPLICATE KEY）</b> 支持重放。生产对 MySQL 写入要注意<b>避免全表扫描 & 批量插最大包限制</b>。</p>"},
+{c:"连接",d:"入门",q:"Flink 如何用 JDBC/外部 KV 做「维表关联」并优化缓存与异步？",a:"<p>实现方式：<b>RichFlatMap + MapState 缓存 + 周期性刷新</b>，或 SQL 的 <b>Lookup Join（表后 join + 异步 io）</b>。优化：<b>缓存（LRU/TTL）</b>避免每条查库、<b>批量查询</b>（in 一批 key）、<b>异步 IO（AsyncDataStream unordered）</b> 提高每并发吞吐；注意<b>缓存一致性</b>与<b>维度变更时效</b>的取舍。</p>"},
+{c:"连接",d:"入门",q:"Flink 连接 HBase 做维度/存储时有哪些注意事项？",a:"<p>① 用 <b>HBase Table Schema</b> 精准建模 rowkey（按查询维度前缀）；② <b>批量 Put / 关闭 WAL 或调整</b>按场景；③ HBase Sink 一般<b>幂等</b>（同一 rowkey overwrite），天然适合重放；④ 维表场景配<b>连接池 + 缓存 + 异步</b>；⑤ 注意 <b>Region 热点</b>（避免 2369 单调 rowkey）与 region 数。</p>"},
+{c:"连接",d:"入门",q:"Flink 写 Elasticsearch 如何保证一致（重放不重复）？",a:"<p>ES Sink 一般用<b>文档 ID（主键字段作为 _id）</b>做幂等：同 _id 覆盖写，重放时最终一致。配合 <b>upsert/update</b> 与<b>失败重试 + 背压</b>，可做到“操作最终一致”。注意 <b>doc id 冲突</b>须按业务设计。也可配合 <b>事务/幂等 + 幂等写入</b>实现端到端近似精确。</p>"},
+{c:"连接",d:"入门",q:"Flink FileSystem Sink 的 Partition Commit（分区提交）是什么？",a:"<p>把结果<b>按时间分区写文件</b>，并用 <b>PartitionCommitPolicy（如成功提交后写 _SUCCESS / 更新 Hive 元数据）</b>标记该分区<b>可用于下游消费</b>。Flink 会<a/><b>按分片/文件滚动</b>-多文件组织、checkpoint 时 flush，配合分区提交，<b>流批一体地</b>产出“只读不update的全新分区文件”，适合湖/数仓 T+0 挂载。</p>"},
+{c:"连接",d:"入门",q:"写 Hive/Filesystem 时如何减少小文件？",a:"<p>① 调大 <b>sink 单文件目标大小 / rolling 阈值</b>；② 提高并行度小于分区数避免并发切太多文件；③ 开 <b>streaming + 分时滚动</b>；④ 离线合并小文件（压缩/ compactor）；⑤ 配合 <b>Paimon/Iceberg 的 compaction</b>。小文件会拖慢后续查询（HDFS NameNode 压力）。</p>"},
+{c:"连接",d:"入门",q:"Flink 写 StarRocks / Doris 一般用什么方式？如何优化？",a:"<p>使用官方 <b>StarRocks Connector（stream load / 或 JDBC）</b>：内存攒批 → <b>stream load 批量发送</b>，Utilize <b>UPSERT</b> 建模。优化：开启 mini-batch、增大 batch size、用<b>预分区</b>、避免高频小批、监控 <b>事务失败重试</b>与 <b>作用标签</b>实现精确一次（基于 label 幂等）。</p>"},
+{c:"连接",d:"入门",q:"什么时候需要自己写自定义 Source/Sink？怎么写？",a:"<p>当<b>开箱连接器不支持你的系统/协议</b>、需要<b>细粒度控制 offset 与 checkpoint</b>、或<b>性能不满足</b>时自写。实现 <b>SourceFunction / 推荐 Source API（SplitReader）</b>或 <b>SinkFunction</b>，处理<b>checkpoint（CheckpointedFunction）、并行拆分、幂等/事务</b>。多数开源成熟场景优先复用、别重复造轮子。</p>"},
+{c:"连接",d:"入门",q:"Flink 一个作业多路 Sink（同一结果写多系统）怎么写？",a:"<p>用 <b>侧输出（SideOutput）</b> 或 <b>多分支 .map(x->x; 各分叉 .addSink)</b>。处理：<b>同一份计算结果写入 Kafka + ES + HDFS</b>，是在 <b>split/侧输出</b>后分别接各自 Sink。注意<b>各 sink 的精确一次</b>各自独立，且<b>吞吐由最慢 sink 决定</b>（Fan-out 反向背压）。若想隔离，可拆成两个作业。</p>"},
+{c:"连接",d:"入门",q:"连接器对「反序列化失败/脏数据」如何容错？",a:"<p>视协议配置：Kafka 可 <b>IGNORE 或忽略坏消息并打到侧输出</b>（Flink 1.13+ 支持 invalidrecord）；SQL 侧可用 <b>正则/类型转换</b>预处理，或自定义 <b>deserializer</b> 容错并<b>侧输出</b>脏数据。核心原则：<b>不因单条坏数据卡死作业</b>，坏数据落到旁路便于排查，同时配合告警与样本分析。</p>"},
+{c:"连接",d:"入门",q:"什么是 Async I/O？在 Flink 里怎么配？",a:"<p>传统外部查询（逐条同步请求）会<b>被 RT 拖慢每并发吞吐</b>。<b>Async I/O（AsyncDataStream）</b>让<b>在等待外部响应的同时并发发更多请求</b>，显著提升与维表/KV交互的吞吐。Flink 提供 <b>AsyncFunction + timeout + inOrder 保持/无序</b>。SQL 的 lookup join 底层也支持 async（通过 table.exec.async.lookup.buffer-capacity 等配置）。</p>"},
+{c:"连接",d:"入门",q:"Kafka 事务与 Flink checkpoint 的「事务超时」问题？（transaction.timeout.ms）",a:"<p>Flink 的<b>Kafka 精确一次 Producer 使用事务</b>，若 checkpoint 间隔大于 Kafka <b>transaction.timeout.ms</b>（默认 1 小时），在 commit 前事务就过期，Flume 重试导致 <b>kafka 报 abort/timeout 错误</b>。解决：把 <b>transaction.timeout.ms 调大</b>（≤ broker 的 max），并 <b>调小 checkpoint interval 或调大该配置</b>。</p>"},
+{c:"连接",d:"入门",q:"Flink 读写 Paimon/Iceberg 湖仓有哪些流批特性？",a:"<p>支持<b>批流一体读写</b>与 <b>time-travel（时间旅行查询）</b>；流式可<b>增量读</b>（读孤立分区/变更日志）。写端有 <b>compaction（合并小文件）</b>与<b>Hive/元数据同步 catalog</b>，实现“T+0 实时数仓 + 湖仓一体”。是 Flink 承接<b>离线与实时共用一套数据底座</b>的热门方案。</p>"},
+{c:"CDC",d:"入门",q:"什么是 Flink CDC？它的核心价值是什么？",a:"<p>Flink CDC 把<b>数据库的变更日志（如 MySQL binlog、PG WAL）实时解析成流式 changelog</b>，让数据<b>变化即事件</b>地同步出来。核心价值：① <b>实时增量同步</b>（毫秒级延迟）入库；② 与 Flink 的 <b>状态与 checkpoint</b> 结合做到精确一次同步；③ <b>全量 + 增量一条链路</b>，替代传统定时同步，用于构建实时数仓。</p>"},
+{c:"CDC",d:"入门",q:"Flink CDC 底层的解析引擎是什么？与 Debezium 关系？",a:"<p>Flink CDC 连接器基于 <b>Debezium（一款 CDC 框架）</b>：Debezium 负责<b>读取并解析 binlog/WAL 为结构化变更事件（Op: create/update/delete + before/after）</b>，Flink CDC 在其上做了<b>Source 接入 + changelog 化 + checkpoint</b>，把 Debezium 消息安全接入 Flink。底层还继承 <b>Maxwell / debezium mysql</b> 等。</p>"},
+{c:"CDC",d:"入门",q:"MySQL CDC 需要哪些前置配置/权限？",a:"<p>① MySQL 开启 <b>binlog（log_bin=on, binlog_format=ROW, binlog_row_image=FULL）</b>；② 分配 <b>RELOAD / SELECT / REPLICATION SLAVE / REPLICATION CLIENT</b> 权限（Debezium 需 REPLICATION SLAVE）；③ 建议表具备<b>主键</b>（无主键表 CDC 默认不支持，可手动指定 chunk key）；④ 管理<b>binlog 保留时间</b>避免长期没消费导致 offset 失效。</p>"},
+{c:"CDC",d:"入门",q:"Flink CDC 的「全量 + 增量」是怎么衔接做到不丢的？",a:"<p>采用 <b>Incremental Snapshot（增量快照）</b>：先<b>分批 SELECT 全量数据</b>导出（按主键切片），同时<b>记录当前 binlog 位点 P</b>；全量导完后再从 P 开始消费 binlog 增量，把两侧<b>无缝拼接</b>并去重（基于时间/EventTime 或业务主键）。它<b>避免传统 Stop-the-world 锁表</b>，且 checkpoint 记录了切片进度与位点，<b>中断可续</b>。</p>"},
+{c:"CDC",d:"入门",q:"Incremental Snapshot 相比“全量快照后再 binlog”有何优势？",a:"<p>传统方案常需<b>短暂锁表标记位点</b>（在全量期间锁库或暂停写入）。<b>Incremental Snapshot</b> 通过<b>并行切分主键、边导边攒位点、业务无损</b>：全量阶段业务可继续写，两个阶段<b>由 offset/Watermark 对齐衔接</b>，且<b>支持并发快照</b>（并行导出），快照更快、对源库影响更小。</p>"},
+{c:"CDC",d:"入门",q:"Flink MySQL CDC 有哪几种 startup（起点）模式？",a:"<p>主要：<b>initial</b>（从<b>当前库做了首次快照</b>，之后实时增量，最常用）；<b>earliest</b>（从最早可用位点）；<b>latest</b>（只从现在开始，丢历史）；<b>specific-offset/timestamp</b>（从<b>指定 binlog 文件+pos 或时间</b>）。开发/生产按“要不要历史数据”选择。</p>"},
+{c:"CDC",d:"入门",q:"PostgreSQL CDC 需要怎么配置？",a:"<p>① 开启 <b>wal_level=logical</b>、<b>max_replication_slots</b>、<b>max_wal_senders</b>；② 创建<b>发布（CREATE PUBLICATION）</b>与<b>逻辑复制槽（replication slot）</b>；③ 用户需【REPLICATION】与【SELECT】。Flink CDC 用 <b>PostgresSourceBuilder</b> 配置域名、插槽名、插件（decoderbufs/pgoutput）。注意<b>复制槽必须被消费</b>否则 WAL 膨胀。</p>"},
+{c:"CDC",d:"入门",q:"SQL Server / Oracle CDC 用什么机制？",a:"<p><b>SQL Server</b>：用 <b>CDC（change data capture，需启用 CDC）或无 CDC 用日志挖掘</b>，Flink CDC 支持 SQLServer CDC（基于捕获实例）。<b>Oracle</b>：可用 <b>XStream（Oracle GoldenGate 协议，推荐）/ LogMiner</b>，Flink CDC Oracle 支持 redo 日志解析。都需权限与日志保留管理，吞吐与源库配置影响大。</p>"},
+{c:"CDC",d:"入门",q:"MongoDB CDC 支持哪种机制？",a:"<p>Flink CDC 用 <b>MongoDB Change Streams</b> 读取 oplog 变更，支持 <b>全量+增量</b>。需 Mongo 副本集/分片集群与 oplog 保留，按 _id 数据及 <b>.startAtOperationTime</b> 控制位点。适合文档型实时同步，注意大文档与 <b>关联/类型化 schema</b> 处理。</p>"},
+{c:"CDC",d:"入门",q:"Flink CDC 在实时数仓里通常怎么定位/使用？",a:"<p>典型位置：<b>业务库 → Flink CDC → Kafka（changelog）→ Flink SQL 加工 → OLAP 数仓 / Kafka / 湖</b>；或 <b>CDC 直连 StarRocks / 湖</b>形成 ODS。它的价值是打通<b>交易态 / 持久化到我仓的“实时 ODS + 维表实时化”</b>。是实时数仓不可或缺的输入端，常与 <b>binlog-cdc → Paimon/Iceberg</b> 组合成实时湖仓。</p>"},
+{c:"CDC",d:"入门",q:"用 CDC 做「维表实时化」怎么做最稳？",a:"<p>把<b>维表库的 CDC 变更入库到 KV/StarRocks/Redis</b>，再用主事实流的 <b>Lookup Join</b> 读它；或用 <b>Versioned Table（Temporal Join）</b>读 CDC 流的时态版本。要点：<b>控制维表数据量、缓存 + TTL</b>、幂等 upsert、监控<b>维度延迟</b>。相比人工同步，CDC 让<b>维度随业务实时刷新</b>。</p>"},
+{c:"CDC",d:"入门",q:"CDC 到大库/Sink 的性能（吞吐/时延）主要受什么影响？",a:"<p>受：<b>源库 binlog 产生速度</b>、<b>CDC 解析与序列化</b>、<b>并行度</b>、<b>下游 sink 吞吐</b>、以及<b>单 binlog 事件大小</b>。想高吞吐：提高 source 并行（incremental snapshot 支持并行）、优化下游 mini-batch/批量写入、避免单分片过热点（按主键 hash）。时延通常在<b>秒内到几百毫秒</b>。</p>"},
+{c:"CDC",d:"入门",q:"binlog 保留期太短，CDC 从 checkpoint 恢复报「offset 不存在」怎么办？",a:"<p>说明 binlog 已被清理，快照位点失效。处理：① 调长 <b>binlog_expire_logs_seconds</b>；② 若无法找回，采用 <b>重新全量 initial</b>（重建同步）或用 <b>指定时间点（timestamp startup）</b>延后起；③ 运维上监控 <b>binlog 消费滞后</b>，避免长期停摆。核心是<b>保证 CDC 作业不停、及时消费</b>。</p>"},
+{c:"CDC",d:"入门",q:"CDC 遇到数据库 schema 变化（加列/删列）怎么处理？",a:"<p>① Flink 依赖 <b>Schema 匹配与白名单</b>，加列需要<b>更新 sink schema / 重新声明表</b>；② 使用<b>schema evolution（如 Paimon/Iceberg 自动加列）</b>或写方宽松解析；③ 生产建议<b>变更前在备库验证、预留滚动</b>，并做<b>版本兼容</b>（保留旧列）。不加监管的 DDL 会中断 CDC 到固化 schema 的链路。</p>"},
+{c:"CDC",d:"入门",q:"CDC 同步到 Kafka 一般是「每表一 topic」还是「一库多表混」？",a:"<p>推荐 <b>事实表/大表每表一 topic</b>，便于按表并行、Schema 清晰、监控独立；架构上也可<b>整库一 topic + 按 table 区分</b>减少连接。设计时考虑：<b>topic 分区分不会倾斜、Schema 演进（CDC 含 Payload 带 schema）、下游消费隔离级</b>。生产多用 <b>catalog 自动建 topic</b> 方案。</p>"},
+{c:"CDC",d:"入门",q:"CDC「全量快照」期间源库需要加锁吗？对业务影响多大？",a:"<p>传统 Debezium snapshot 模式 <b>默认会对相关表短暂锁读（FULL 模式会短暂 FTWRL/元数据锁）</b>。<b>Flink CDC 的 Incremental Snapshot 因走分批 SELECT</b>（binlog 补齐），<b>不需要长时锁表</b>、业务基本无感知。但对<b>源库压力</b>（大量全量扫描）仍在，建议错峰、限制扫描并行与 batch。</p>"},
+{c:"CDC",d:"入门",q:"Flink CDC 的 checkpoint 恢复会不会「丢已提交但未写出的数据」？",a:"<p>不会（前提正确）。<b>Source 每完成一次 checkpoint 即记录了对应 binlog 位点</b>，Sink 也参与两阶段提交；恢复时从<b>最近成功的 checkpoint</b>重放，source 从该位点续读，<b>未提交/未写出的数据被完整重放</b>，配合 upsert/事务 sink 达到<b>精确一次</b>。要点：source 与 sink 共用 checkpoint，且 sink 支持一致提交。</p>"},
+{c:"CDC",d:"入门",q:"多张表 / 整库（whole database）实时同步怎么做？",a:"<p>方案一：<b>Flink CDC whole-schema / Database 连接器</b> 把<b>整库的 binlog</b> 一次性接入，按 table 拆分支流分表 sink；方案二：<b>CDC 全量入库 Kafka</b>，再由 Flink <b>按 table 路由到各自 topic/表</b>。要点：<b>统一偏移/位点</b>、<b>表结构探索（catalog scan）</b>、<b>并行隔离</b>（大表小表）、<b>幂等 upsert</b>。</p>"},
+{c:"CDC",d:"入门",q:"CDC 与普通「DataStream 读 Kafka 自己解析」相比有何优势？",a:"<p>① CDC 自带 <b>binlog 语义（before/after + op）</b> 的处理与 <b>changelog 化</b>，无需自己解析；② 内置 <b>全量+增量衔接与 checkpoint 位点</b>，自己写容易漏快照与位点；③ 与 <b>SQL 的 primary-key upsert / 维表 / 时态 join</b>直接融合，开发成本低。差异在你<b>想不想手写 binlog 消费与快照协调</b>。</p>"},
+{c:"CDC",d:"入门",q:"Flink CDC 的 Source 并行度能到多少？受什么限制？",a:"<p><b>Incremental Snapshot 的并行度可设置较高</b>（<b>scan.incremental.snapshot.chunk.size</b> 决定切多少个主键片），但<b>binlog 增量阶段一般并行=1（单连接解析）</b>，是增量的天然瓶颈；超大表全量阶段可并行加快。设计上<b>全量并行、增量单流</b>，若增量要扩展，需按分片/分库做多 job。新版对超大表建议 <b>一把并行 + 拆分</b>。</p>"},
+{c:"CDC",d:"入门",q:"CDC 输出如何让下游知道「这一行是 insert/update/delete」？",a:"<p>Flink CDC 产出 <b>RowData/变更流（RowKind：INSERT — INSERT / UPDATE — UPDATE / DELETE）</b> 的 changelog 流，头部带 kind 标识；SQL 里可 <b>通过表的主键 + 下游 upsert</b>，或用 <b>op 字段（CHANGE_TYPE）</b> 显式携带。下游据此做<b>覆盖/删除</b>语义。</p>"},
+{c:"CDC",d:"入门",q:"CDC 与「定期全量覆盖」的选型依据是什么？",a:"<p>选 CDC 的场景：<b>数据量大</b>、需要<b>增量实时</b>、秒级～分钟级、要<b>精确变更/删改</b>、下游能 upsert。选全量的场景：<b>数据量小、定期低频</b>即可、下游只支持 append 全量、binlog 不可用。电商订单/库存这类高频变更强烈推荐 CDC + upsert 数仓；T+1 报表则可全量。</p>"},
+{c:"CDC",d:"入门",q:"Flink CDC 与 Canal/DataX 这类工具本质区别？",a:"<p><b>DataX</b> 是<b>批量搬迁工具（离线全量）</b>，无实时增量；<b>Canal</b> 擅长<b>把 MySQL binlog 转发为 MQ/下游</b>，但是<b>独立的中间件（需单独部署运维、无计算）</b>。<b>Flink CDC</b> 把解析能力<b>内置进 Flink 流式计算</b>，能与窗口/状态/聚合/湖仓加工一体化，实现“同步 + 加工”一条龙，实时增量闭环更强。</p>"},
+{c:"CDC",d:"入门",q:"CDC 的「数据一致性」在分布式事务（TCC/多表跨库）下如何保证？",a:"<p>CDC 遵循 <b>binlog 的顺序即变更顺序</b>，前提是 <b>源库单库串行、跨库无全局一致</b>。若跨库/跨表有先写后删的依赖，需<b>在业务侧约定写序</b>或<b>下游按业务主键/时间幂等合并</b>。Flink 提供<b>同一 key 保序</b>（keyBy）与<b>changelog 顺序</b>，但<b>分布式事务的全局时间序</b>依赖业务登记，不属于引擎天然保证。</p>"},
+{c:"CDC",d:"入门",q:"Flink CDC 典型的“数据同步到数据湖”链路是怎么搭的？",a:"<p>常用：<b>MySQL/PG → Flink CDC（Source） → Flink SQL 清洗/加主键 → 写入 Paimon / Iceberg 表（Primary Key 建模，Merge-On-Read/compaction）</b>，得到 <b>实时更新、可按 time-travel / snapshot 查询</b>的“实时 ODS + 明细”。加 <b>schema evolution</b> 可随源 DDL 演进；配套 <b>compaction 与查询</b>形成实时湖仓。</p>"},
+{c:"调优",d:"进阶",q:"如何系统定位 Flink 作业的性能瓶颈？",a:"<p>按流程：① 看 <b>Web UI/Metrics 反压指标</b>（是 source 看不到数据还是 operator 处理满）；② 看 <b>算子延迟/吞吐</b>（哪个算子耗时最高）；③ 看 <b>Checkpoint 时长与失败</b>（快照是否拖垮）；④ 看 <b>GC</b>（是否频繁 Full GC）；⑤ 看 <b>外部查询 RT</b>（维表/连接器）。瓶颈多在：<b>反压链上最慢算子、倾斜 key、磁盘/内存、Sink 吞吐</b>。</p>"},
+{c:"调优",d:"进阶",q:"什么是反压（Backpressure）？Flink 如何实现？",a:"<p>反压是<b>下游处理不过来的信号反馈到上游</b>，让上游暂停/限速，避免内存被打爆、数据丢失。Flink 用<b>基于 Credit（票据）的 TCP 背压</b>：上游只有收到下游回执的 credit 才发送数据，下游满了就不发。相比单纯 TCP，能做到<b>在一个 channel 上不阻塞其他 channel</b>，局部化影响。</p>"},
+{c:"调优",d:"进阶",q:"反压出现后该怎么排查与缓解？",a:"<p>排查：用 <b>UI 反压刻度</b>定位<b>最下游被压的算子</b>，看它上游链、它的<b>处理速率 vs 输入速率</b>、是否健康。<b>缓解</b>：① 提升<b>并行度</b>；② 优化<b>算法/序列化</b>；③ 加快 <b>sink</b>（批量、异步）消除写瓶颈；④ 减轻<b>数据倾斜</b>；⑤ 调大 <b>network buffer</b>、增加 task 内存。反压根因通常在上游慢/下游慢，需结合业务采样。<b>注意</b>：轻微反压是正常的（结果排序/窗口等），严重才需处理。</p>"},
+{c:"调优",d:"进阶",q:"数据倾斜（Skew）是什么？典型症状有哪些？",a:"<p>数据倾斜指<b>某些 key 数据量远大于其他 key</b>，导致对应子任务长期高负载、其他空转，体现为：<b>单个 task 反压、吞吐上不去、某个 task CPU 打满、Checkpoint 慢</b>。典型来源：key 分布不均（热点用户/商品）、窗口聚合单 key、Sink 按 key 写热点分区。<b>目标</b>：把热点做<b>再均衡</b>。</p>"},
+{c:"调优",d:"进阶",q:"Key 倾斜的聚合类作业如何优化？",a:"<p>常用 <b>两阶段聚合（local + global）</b>：先按 <b>原始 key 加盐随机分桶</b>做一次局部聚合，再按真实 key 合并；或对热点 key <b>人工加盐</b>拆散。SQL 里可用 <b>mini-batch + local-global aggregate</b> 自动缓解。<b>代价</b>：局部聚合会降低一点精度（依赖加盐规则），需保证可合并。</p>"},
+{c:"调优",d:"进阶",q:"窗口/Sink 层面的数据倾斜怎么处理？",a:"<p>窗口：避免<b>单 key 爆量窗口</b>，对大 key <b>二次 keyBy 并行</b>；或改用 <b>两阶段滑窗</b>。Sink：对按 key 写单分区的 sink，<b>提高分区数 + 让 Flink 再均衡（rebalance）</b>，或对写入侧 <b>round-robin 分散</b>。根本是<b>识别热点维度并打散</b>，同时配合 <b>监控单 task 指标</b>确认生效。</p>"},
+{c:"调优",d:"进阶",q:"Flink 网络缓冲区（Network Buffer）与分区间高吞吐怎么配？",a:"<p>网络用 <b>MemorySegment 缓冲</b>支撑背压与吞吐。关键参数 <b>taskmanager.memory.network.size（netty 内存）</b>、<b>每个 channel 缓冲数</b>。高吞吐场景<b>适当增大 network 内存与缓冲数</b>，避免频繁“buffer 不足阻塞”；但过大浪费。多分区大并行时<b>按 total/分区数估算</b>，并用 <b>credit/预估</b>。</p>"},
+{c:"调优",d:"进阶",q:"算子的并行度该怎么合理评估？",a:"<p>从<b>吞吐目标、单并发能力、数据量/热度、状态内存、分区数（source≤分区）</b>综合评估：先<b>基线调优</b>（如 1 并行跑通）看单并发吞吐，再按<b>峰值流量 / 单并发</b>推并行度，并<b>留 20%~30% 余量</b>应对毛刺。注意<b>并行度不是越高越好</b>（调度、网络、状态分片、小文件均受影响），结合**算子复杂度**逐算子设置。</p>"},
+{c:"调优",d:"进阶",q:"Flink 的 GC 与内存如何调优？",a:"<p>① 大状态尽量用 <b>RocksDB（堆外/磁盘）</b>或把缓存放 managed，减少堆 GC；② 堆大小按 <b>taskmanager 内存配置</b>合理缩放，避免频繁 Young GC 与 Full GC；③ 开启 <b>堆外（off-heap）</b>放网络/Kryo 数据；④ 观察 <b>GC 频率与时长指标</b>，必要时升堆、换 G1、开启 <b>flink 的 inbound 缓存</b>。目标是<b>让 GC 停顿不成为主因</b>。</p>"},
+{c:"调优",d:"进阶",q:"在什么场景开 mini-batch 与 local-global 聚合？代价是？",a:"<p>对<b>网络密集/高频聚合</b>场景（SQL 聚合 <b>GROUP BY</b>），开启 <b>mini-batch</b> 让 Flink 攒一批再聚合，<b>减少对状态/网络的访问频次</b>、显著提吞吐；<b>local-global</b> 进一步对<b>倾斜聚合</b>先本地减到一小组再加全局。代价：<b>结果延迟增大</b>（最多推迟一个 batch 窗口）与复杂度，<b>不适合对延迟敏感</b>的细粒度场景。</p>"},
+{c:"调优",d:"进阶",q:"序列化拖慢性能怎么优化？",a:"<p>① 用 <b>Flink 自带序列化</b>：确保类型被精确推导（不要退回 Kryo），<b>用 TypeHint / POJO 规范字段</b>；② 大数据用小对象，<b>复用对象</b>减少 GC；③ 压缩大字段（如长字符串）或裁剪列；④ 避免 <b>大 Object[]/复杂泛型</b>。序列化往往占 CPU 不小比例，减少 <b>体积 + 拷贝 + 反序列化</b>收益明显。</p>"},
+{c:"调优",d:"进阶",q:"Checkpoint 间隔怎么设才兼顾容错与性能？",a:"<p>一般 <b>interval ∈ [快照时长 × 5, 短于可接受丢失时间的 1/3~1/5]</b>。太短则快照频繁、拖慢吞吐；太长则故障重放的丢失窗口大。参考：<b>快照 30s 级的作业可设 1~5 分钟</b>；对丢数据敏感的业务 <b>缩短并配合 <b>changelog 增量</b></b>。同时监控 <b>恢复时间（RTO）</b>与 <b>丢弃窗口（RPO）</b>平衡。</p>"},
+{c:"调优",d:"进阶",q:"Sink 吞吐上不去怎么优化？",a:"<p>① 用<b>批量/攒批</b>（Kafka 批量、JDBC batch、StarRocks stream load）；② 提高<b>并行度</b>；③ 用 <b>异步 IO</b> 掩盖 RT；④ 针对<b>写放大</b>：避免逐行 commit、提取 <b>upsert 幂等</b>；⑤ 检查 <b>背压</b>在不在 sink；⑥ <b>分离慢 sink</b>为独立作业加缓冲。Sink 慢会在作业末尾形成反压源头。</p>"},
+{c:"调优",d:"进阶",q:"<b>job 资源</b>（Slot/内存/并行）怎么按数据量估算？",a:"<p>粗估：<b>目标吞吐 / (单并发吞吐×80%)</b>=并行度；<b>Slot=并行度之和/节点 slot 共享</b>；内存=max(算子状态倍率、窗口缓冲、序列化缓冲) + <b>managed（RocksDB）</b> + network。用 <b>压测</b>定基线：跑满载 30min，看 CPU/内存/背压。生产按 <b>峰值 ×4 倍</b>估 Slot 冗余，再靠 <b>反压与延迟</b> 迭代微调。</p>"},
+{c:"调优",d:"进阶",q:"多个作业在同一个 Session 集群怎么避免互相影响？",a:"<p>Session 共用 TaskManager Slot，<b>易互相抢占（内存/CPU/Slot）</b>。优化：① 关键作业用 <b>Per-Job / Application 隔离</b>；② 给作业设<b>并行度上限与内存上限</b>；③ 用<b> slot 共享组 + 资源维度</b>隔离；④ 按<b>优先级</b>调度；⑤ 监控每个作业 <b>task 资源占用</b>，把重作业独立出来。生产大集群倾向 <b>Application 模式 + 专有池</b>。</p>"},
+{c:"调优",d:"进阶",q:"怎么做「只读热点」优化（同一 Name 大 key 重复计算）？",a:"<p>对<b>极端热点 key（单个 key 占优势）</b>：① 在<b>keyBy 前把热点识别出来放到独立流</b>（不参与倾斜主链）再特殊处理；② 用 <b>random salt</b> 分片再聚合；③ 将<b>维度/Dictionary 型大 key 采用 broadcast/侧流</b>避免网络重复；④ 对纯粹大 key 统计采用<b>Bloom/近似</b>结构。目标是让<b>热点不再单 task 独占</b>。</p>"},
+{c:"调优",d:"进阶",q:"Flink 的 Rebalance / Round-Robin / Rescale 分区策略怎么选？",a:"<p><b>keyBy</b>：按 key hash，保同 key 顺序；<b>rebalance</b>：轮询平均分配，适合下游均匀且无 key 需求；<b>rescale</b>：相邻子任务叫局部轮询，网络开销小，适合上游并发关系固定；<b>broadcast</b>：都发全量，适合广播状态；<b>global</b>：全部到一个 task。选型看<b>是否需要保序、均衡性、key 语义</b>。</p>"},
+{c:"调优",d:"进阶",q:"如何用指标（Metrics）快速定位是 CPU 还是 IO 还是 GC 瓶颈？",a:"<p>看组合指标：<b>CPU（PROCESS_CPU_LOAD）</b>高而**吞吐低**→算力/算法/锁；<b>磁盘 IO/网络 IO</b>高→<b>读写（RocksDB 写放大、网络 shuffle）</b>；<b>GC 时长上升</b>→堆内存/状态堆压力；<b>延迟高但 CPU 低</b>→<b>背压/等待外部</b>（维表、Sink）；<b>numRecordsInPerSecond 正常但反压</b>→下游某算子慢。结合 <b>TaskManager 日志与火焰图</b>定位到代码点。</p>"},
+{c:"原理",d:"高级",q:"Flink 中 JobGraph → ExecutionGraph 是怎样的转化过程？",a:"<p><b>JobGraph</b> 由 Client 根据 StreamGraph 生成，是<b>逻辑优化后的拓扑</b>（含 job vertex 与 jedge，含<b>链式优化</b>）。<b>ExecutionGraph</b> 在 JobManager 内构建：把每个 jobVertex 展开为<b>并行 ExecutionVertex、并按并行度生成中间结果分区（IntermediateResultPartition）</b>，形成<b>可执行的物理图</b>，调度器基于它部署任务与分配网络边。</p>"},
+{c:"原理",d:"高级",q:"Flink 的 Slot Sharing（资源共享）如何工作？好处？",a:"<p><b>SlotSharingGroup</b> 把<b>同一作业整条 DAG 的不同算子</b>共享到<b>同一个 TaskManager 的同一个 Slot</b>（默认全局一个组）。好处：<b>一个 TM 就能容下整作业的并行子任务</b>，启动快、复用桶、<b>减少 TM 数量</b>与调度复杂度。代价是<b>资源隔离弱</b>——同一 slot 内算子共享内存/CPU。可自定义组做<b>隔离/IO 分区</b>。</p>"},
+{c:"原理",d:"高级",q:"Flink 的任务（Task）/子任务（SubTask）与线程是如何组织的？",a:"<p>每个 <b>ExecutionVertex=一个 SubTask，承载并行算子链</b>（多个 operator 链在一个线程内顺序执行，避免序列化+网络）。TaskManager 里每个 <b>Slot 由 TaskExecutor 跑若干个 Task</b>，每个 Task 有一个<b>独立主线程循环</b>（从接 channel 读 → 算子处理 → write channel），配合<b>record reader/writer</b>。链式（<b>operator chaining</b>）保证<b>单线程内多算子流水</b>，减少同步与拷贝。</p>"},
+{c:"原理",d:"高级",q:"你能说说 Flink 的网络数据传输（Credit-based）深入原理吗？",a:"<p>上游给每个下游 channel 一个 <b>缓冲区队列</b>；数据<b>要穿过网络</b>先占 buffer，只有<b>下游返回 Credit（可用缓冲槽的数量）</b>才允许继续发，实现了<b>逐 channel 的背压</b>。Flink 在 <b>JobManager 动态订阅</b>数据分区连接，通过 <b>netty（TCP）</b>把 MemorySegment 交给下游。credit 机制<b>局部化反压</b>：一个慢下游不会阻塞其他并行的下游链路。</p>"},
+{c:"原理",d:"高级",q:"Flink 内存模型细分与各段作用？",a:"<p>TM 总进程内存拆为：<b>framework heap（框架逻辑）</b>、<b>task heap</b>（算子在堆内存算）、<b>managed memory</b>（RocksDB/排序/批量缓冲，可纳堆外）、<b>network memory</b>（背压/网络缓冲）、<b>framework off-heap</b>、<b>JVM overhead/Metaspace</b>。JM 类似更小。理解它们才能<b>精确配内存、避免堆外溢出</b>。</p>"},
+{c:"原理",d:"高级",q:"Chandy-Lamport 分布式快照算法如何被 Flink 落地？",a:"<p>JobManager 周期向<b>所有 Source 注入 barrier</b>；每个算子收到 barrier 后：<b>先做本地状态快照（作为 Checkpoint 的一部分），再继续向下游转发 barrier</b>；对多输入算子需<b>对齐（收到所有输入流的同一 barrier）</b>再快照；同时每个 source 把偏移量<b>记入状态</b>。所有算子的快照<b>汇总到 JobManager 即为一个一致快照</b>，Chandy-Lamport 通过“沿有向图传播标记”保证<b>全序一致</b>。</p>"},
+{c:"原理",d:"高级",q:"为什么 barrier 对齐后能保证 Exactly-Once？",a:"<p>对齐保证了 <b>快照点 ≤ 标签之前的全部数据已被处理</b>（barrier 前元素全部处理完、之后元素阻塞在 buffer）。恢复时<b>从该一致性快照重放</b>：每个算子从快照状态继续，<b>只重放快照点之后的数据</b>，因此<b>每条数据恰好处理一次、状态恰好回到一致点</b>。不对齐（At-least-once）则可能处理多次，需要幂等兜底。</p>"},
+{c:"原理",d:"高级",q:"Flink 的时间与定时器（Timer）是按下层如何实现的？",a:"<p><b>事件时间定时器</b>：注册到 bPriorityQueue，当 <b>收到的新水位线≥时间戳</b>时弹出并触发 onTimer；<b>处理时间定时器</b>由<b>系统本地时钟</b>驱动。定时器<b>序列化进状态</b>参与 checkpoint，恢复后继续。Flink 统一用 <b>HeapTimerService / RocksDB Timer（优先队列）</b>存储，超大定时器放 RocksDB 避免堆爆。</p>"},
+{c:"原理",d:"高级",q:"TaskManager 是如何被调度与故障协调的？（调度器/Slot 提供者）",a:"<p>ResourceManager 从 <b>集群资源池（YARN/K8s）申请 TM</b>，每个 TM 上报自己的 Slot 给 **SlotPool**；调度器（DefaultScheduler + 各类调度策略）给<b>ExecutionVertex 申请 Slot</b> 并<b>部署 Task</b>到该 TM 的 TaskExecutor。TM 心跳丢失会<b>触发 failover</b>，由 <b>FailoverStrategy（restart all / region）</b>决定重算范围。</p>"},
+{c:"原理",d:"高级",q:"Flink 的「本地性」与「数据倾斜」在调度上分别如何表现？",a:"<p><b>Data Locality（本地性）</b>：Flink 尽量把<b>下游 task 调度到与上游相同/近的 TM</b>，减少跨机网络；但因 <b>hash shuffle</b>，上游每个并发都可能发往<b>所有下游并发</b>，本地性在 keyBy 场景弱，只有 <b>forward 链</b>能保证同机。<b>倾斜</b>：hash 一致性导致部分 <b>ExecutionNode 承载不平衡</b>，冷热不均出现。</p>"},
+{c:"原理",d:"高级",q:"Flink 的 Heartbeat 与故障检测机制是怎样的？",a:"<p>TaskManager 与 JobManager 定期<b>互发心跳</b>；若 JM 长时间未收到某 TM 心跳 → 判定该 TM <b>失联（timeout）</b>，触发其上的 tasks 失败与<b>Failover</b>；同时 TM 上报的状态与 task 部署关系由 <b>JobMaster 管理</b>。对自身无心跳靠<b>K8s/YARN 探活</b>。故障检测的敏感度用 <b>心跳间隔/超时参数</b>调节，过短假阳性、过长恢复慢。</p>"},
+{c:"原理",d:"高级",q:"Checkpoint Coordinator 如何避免「多个并发 checkpoint」互相覆盖？",a:"<p>Coordinator 为<b>每个 checkpoint 维护一个序号（n）与 <b>Phase</b></b>，拒绝非单调回退的请求；算子记录<b>最近完成的 barrier 属主 n</b>，只响应最新的 n。<b>旧的、未完成的 checkpoint 会 abort</b>，保证<b>恢复总是选择“最新且全局一致”的快照</b>，避免乱序引起的状态不一致。</p>"},
+{c:"原理",d:"高级",q:"什么是「算子链」（Operator Chaining）？有哪些链式规则？",a:"<p>把 <b>相邻、parallelism 相同、无 keyBy/reconnect 重分区且类型兼容</b>的算子<b>合并进同一线程的链</b>（像局部流水线），<b>省去序列化+网络+中断</b>。<b>禁止链</b>的情形：<b>发生 shuffle/repartition、并行度不等、被手动 disableOperatorChaining、桥接（startNewChain）</b>。Flink 默认自动链，可通过 <b>slot/hint</b> 精细控制性能。</p>"},
+{c:"原理",d:"高级",q:"Flink 里为什么 source/sink 也是「流式算子」？如何理解“有界即批”？",a:"<p>把<b>任何接入都建模为带状态/带 checkpoint 的 stream source</b>，只是数据是否有界不同：<b>有界 source（文件/batch）结束时发出 End-of-Stream 信号</b>，触发窗口全局冲刷、状态释放，整体行为退化为<b>批</b>；无界则持续。这个<b>统一模型</b>让 Flink 一套算子同时服务流批。</p>"},
+{c:"原理",d:"高级",q:"Flink 中「keyBy 后的事件顺序」与「跨 key 顺序」分别如何保证？",a:"<p><b>同一 key</b>：hash 到同一 subTask，保证<b>该 key 事件全局顺序</b>；<b>不同 key</b> 之间无序、且各 subTask 相对顺序保留（Flink 保证<b>同一通道内顺序</b>但不保证跨通道）。窗口、状态、计时都按<b>key 隔离</b>，因此保序只对 key/keyed 有意义；若需全局顺序，只能<b>并行度=1</b>（牺牲吞吐）。</p>"},
+{c:"原理",d:"高级",q:"Flink 官方推荐的「反压 vs 延迟 vs 吞吐」三角如何权衡？",a:"<p>三者互斥：去<b>反压（缓存网络缓冲）</b>有利吞吐但增延迟；保<b>低延迟</b>（小缓冲、即时输出）副作用是更易背压；要<b>高吞吐</b>（批处理、攒批、大缓冲）则延迟上升。工程上<b>按业务 SLA 定“性价比”</b>：实时风控压延迟、报表汇总压吞吐。常用手段 <b>mini-batch、网络缓冲、checkpoint 频率</b>做横向调节。</p>"},
+{c:"原理",d:"高级",q:"Flink 的 Slots / 资源在与 YARN/K8s 结合时的粒度是什么？",a:"<p>你的 <b>TaskManager 通常 = 1 个 YARN 容器 / 1 个 K8s Pod</b>（里面是 TaskExecutor），**Slot 只是 TM 内逻辑资源切片**（Flink 1.15+ 已能用 <b>physical memory</b> 的动态 Slot）。所以**水平扩展**是“加 TM（=容器）”，**单 TM 内并行**靠管理 Slot 数。选 <b>TM 数与 Slot 数</b>=决定内存/CPU 分布，需按作业的数据与权重配。</p>"},
+{c:"原理",d:"高级",q:"Flink 状态与序列化为何要「copy-on-write」做快照？",a:"<p>快照过程若<b>边写边读会把正在变化的状态快照得前后不一</b>。Flink 用 <b>copy-on-write**：快照时复制一份<a href>句柄</a>或「见到的版本」，让<b>在线写不阻塞快照（异步快照）</b>，既保证一致点又有吞吐。RocksDB 靠 <b>文件系统快照</b>（不阻塞写）；Heap 靠<b>对象复制</b>。这是<b>“低成本、不影响在线”</b>快照的关键设计。</p>"},
+{c:"原理",d:"高级",q:"<b>Flink 作业从提交到运行</b>全链路的线程/消息流转？",a:"<p>Client <b>构造 StreamGraph→JobGraph</b>，push 到 <b>Dispatcher</b>；<b>JobMaster</b> 加载 JobGraph→ExecutionGraph，向 <b>ResourceManager</b> 申请 TM；TM 的 <b>TaskExecutor 分配 Slot</b>后，JobMaster 下发 <b>TaskDeployment 命令</b>，各 Task 创建 <b>SubTask + 算子链</b>，通过 <b>Network 建立 channel 连接</b>，随后 <b>Source 开始拉取</b>流入数据，DAG 流水线开始吞吐。期间 JobManager 统一<b>协调 checkpoint/心跳/度量</b>。</p>"},
+{c:"原理",d:"高级",q:"Flink 与 Spark 在「状态管理 & 容错」机制上的根本差异是什么？",a:"<p>Spark 用<b>RDD 血缘 + 阶段重算</b>恢复（无细粒度状态、或靠 Structured Streaming 的微批 StateStore），恢复粒度是<b>整个阶段</b>、恢复代价与数据源重放较大；Flink 用<b>barrier 对齐的极小一致 Checkpoint（Chandy-Lamport）</b>，可<b>亚秒级、算子级恢复</b>并<b>端到端精确一次</b>，且<b>状态是引擎一等公民</b>（KeyedState/OpState/广播/TTL）。<b>恢复粒度和状态原生支持</b>是核心差异。</p>"},
+{c:"原理",d:"高级",q:"Flink 的调度器如何支持「Region-based Failover」？",a:"<p>Flink 将 <b>ExecutionGraph 划分为 Region</b>（job graph 的子图块），当某 task 失败时<b>只重启它所在的 Region 及其下游</b>，不必重启全作业；上游无关 Region 保活。相比 <b>restart-all - strategy 全量重启</b>，Region-Failover 显著 <b>降低恢复代价与 RTO</b>，是依赖状态大作业的默认推荐策略。</p>"},
+{c:"原理",d:"高级",q:"Flink 的「分布式缓存」(fromCacheFile) 与「广播状态」有什么区别？",a:"<p><b>DistributedCache</b>：把<b>静态文件（词典、GeoIP 等）</b>先分发到每个 TM 缓存，在 open 时读取，适合<b>低频或启动时加载的配置文件/小词典</b>。<b>Broadcast State</b>：<b>动态、实时随流更新</b>，适合<b>规则/阈值在线变更</b>且与处理同源。一个静态一个动态，是<b>维度来源不同</b>的选择。</p>"},
+{c:"原理",d:"高级",q:"推理：一个 <b>大状态 + 低延迟</b>作业该如何选型架构？",a:"<p><b>状态大</b>→用 RocksDB 放磁盘+ managed；<b>低延迟</b>→ ⚠️ RocksDB 序列化对 <b>热 key</b>有开销，可 <b>把最热 key 放 Heap</b>分层（自写热缓存，冷状态 RocksDB）；配合 <b>异步快照（changelog）降低快照停顿</b>、<b>Region failover</b>减小恢复、<b>合理并行</b>分散。核心是 <b>热数据堆内、冷数据磁盘</b>，把 <b>读写延迟与内存/GC</b>做平衡。</p>"},
+];
+
+let state = {d:"all", c:"all", kw:""};
+const $ = s => document.querySelector(s);
+const DIFF_TAG = {入门:["d1","入门"],进阶:["d2","进阶"],高级:["d3","高级"]};
+
+function render(){
+  const list = $("#list");
+  const cats = {};
+  DATA.forEach((item, i)=>item._i=i);
+  let visible = 0;
+  // group by category preserving order
+  const groups = {};
+  CAT_ORDER.forEach(c=>groups[c]=[]);
+  DATA.forEach(item=>{ groups[item.c].push(item); });
+  list.innerHTML = "";
+  for(const c of CAT_ORDER){
+    const items = groups[c].filter(x=>matches(x));
+    if(!items.length) continue;
+    const sec = document.createElement("div");
+    const title = document.createElement("div");
+    title.className = "cat-title";
+    title.innerHTML = `<h2>${c}</h2><span class="line"></span><span class="count">${items.length} 题</span>`;
+    sec.appendChild(title);
+    items.forEach(it=>{ visible++; sec.appendChild(card(it)); });
+    list.appendChild(sec);
+  }
+  $("#stat-total").textContent = DATA.length;
+  $("#ftotal").textContent = DATA.length;
+  const tip = $("#tip");
+  tip.textContent = state.kw||state.d!=="all"||state.c!=="all"
+    ? `匹配 ${visible} / ${DATA.length} 题` : "";
+  $("#empty").style.display = visible? "none":"block";
+  updateStatOpen();
+}
+function matches(x){
+  if(state.c!=="all" && x.c!==state.c) return false;
+  if(state.d!=="all" && x.d!==state.d) return false;
+  if(state.kw && !(x.q+ (x.a?x.a:"")).includes(state.kw)) return false;
+  return true;
+}
+function card(it){
+  const el = document.createElement("div");
+  const dt = DIFF_TAG[it.d]||["d1",it.d];
+  const q = document.createElement("div");
+  q.className="qtext"; q.textContent=it.q;
+  const num = document.createElement("div");
+  num.className="qnum"; num.textContent=it._i+1;
+  const ans = document.createElement("div");
+  ans.className="answer";
+  ans.innerHTML = `<div class="answer-in">${it.a||""}<div class="hint">👌 答案已揭晓 ${it.d} · ${it.c}</div></div>`;
+  el.className="qcard";
+  const head = document.createElement("div");
+  head.className="qhead";
+  head.appendChild(num);
+  const bodyc = document.createElement("div");
+  bodyc.style.flex="1";
+  const meta = document.createElement("div");
+  meta.className="qmeta";
+  meta.innerHTML=`<span class="tag cat">${it.c}</span><span class="tag diff ${dt[0]}">${dt[1]}</span>`;
+  bodyc.appendChild(meta);
+  bodyc.appendChild(q);
+  head.appendChild(bodyc);
+  const arr = document.createElement("span");
+  arr.className="arrow"; arr.textContent="›";
+  head.appendChild(arr);
+  el.appendChild(head);
+  el.appendChild(ans);
+  el.addEventListener("click", ()=>{ el.classList.toggle("open"); updateStatOpen(); });
+  return el;
+}
+function updateStatOpen(){ $("#stat-open").textContent = document.querySelectorAll(".qcard.open").length; }
+
+document.querySelectorAll(".chip").forEach(ch=>{
+  ch.addEventListener("click",()=>{
+    const group = ch.dataset.d!==undefined?"d":"c";
+    document.querySelectorAll(`.chip[data-${group}]`).forEach(x=>x.classList.remove("active"));
+    ch.classList.add("active");
+    state[group]=ch.dataset[group];
+    render();
+  });
+});
+$("#search").addEventListener("input",e=>{ state.kw=e.target.value.trim(); render(); });
+
+render();
+</body>
+</html>

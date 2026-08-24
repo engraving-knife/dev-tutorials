@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投影定义与物化命令详解</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-start: #e8f5fe;
+    --bg-mid: #f0e6ff;
+    --bg-end: #e0f7fa;
+    --card-bg: rgba(255, 255, 255, 0.72);
+    --card-border: rgba(255, 255, 255, 0.5);
+    --card-shadow: rgba(104, 116, 186, 0.15);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a4a6a;
+    --text-tertiary: #7a7a9a;
+    --accent-1: #6c63ff;
+    --accent-2: #00b4d8;
+    --accent-3: #f97316;
+    --accent-4: #10b981;
+    --accent-1-light: rgba(108, 99, 255, 0.1);
+    --accent-2-light: rgba(0, 180, 216, 0.1);
+    --accent-3-light: rgba(249, 115, 22, 0.1);
+    --accent-4-light: rgba(16, 185, 129, 0.1);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
+    min-height: 100vh;
+    color: var(--text-primary);
+    line-height: 1.7;
+    padding: 40px 24px;
+  }
+
+  .container {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+
+  /* ===== Hero ===== */
+  .hero {
+    text-align: center;
+    padding: 56px 40px 46px;
+    margin-bottom: 40px;
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.08), rgba(0, 180, 216, 0.08));
+    border-radius: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -20%;
+    width: 70%;
+    height: 200%;
+    background: radial-gradient(ellipse, rgba(108, 99, 255, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40%;
+    right: -10%;
+    width: 50%;
+    height: 150%;
+    background: radial-gradient(ellipse, rgba(0, 180, 216, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    margin-bottom: 18px;
+    position: relative;
+  }
+  .hero h1 {
+    font-size: 38px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 14px;
+    position: relative;
+    letter-spacing: -0.5px;
+  }
+  .hero p {
+    font-size: 17px;
+    color: var(--text-secondary);
+    max-width: 660px;
+    margin: 0 auto;
+    position: relative;
+    line-height: 1.8;
+  }
+
+  /* ===== Glass card ===== */
+  .glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 34px 38px;
+    margin-bottom: 28px;
+    box-shadow: 0 8px 32px var(--card-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(104, 116, 186, 0.2);
+  }
+  .glass-card h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .glass-card h2 .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+  .glass-card h3 {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 22px 0 10px;
+    color: var(--text-primary);
+  }
+  .glass-card p {
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    font-size: 15.5px;
+  }
+  .glass-card p:last-child { margin-bottom: 0; }
+  .glass-card ul, .glass-card ol {
+    color: var(--text-secondary);
+    margin: 0 0 14px 20px;
+    font-size: 15.5px;
+  }
+  .glass-card li { margin-bottom: 8px; }
+  .glass-card li strong { color: var(--text-primary); }
+
+  .icon-accent-1 { background: var(--accent-1-light); color: var(--accent-1); }
+  .icon-accent-2 { background: var(--accent-2-light); color: var(--accent-2); }
+  .icon-accent-3 { background: var(--accent-3-light); color: var(--accent-3); }
+  .icon-accent-4 { background: var(--accent-4-light); color: var(--accent-4); }
+
+  /* ===== Code blocks ===== */
+  .code-block {
+    background: #1a1a2e;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin: 14px 0 18px;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-block .lang-label {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0 14px 0 10px;
+  }
+  .code-block code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #e4e4e7;
+    display: block;
+    white-space: pre;
+  }
+  .code-block .kw { color: #c084fc; }
+  .code-block .fn { color: #60a5fa; }
+  .code-block .str { color: #34d399; }
+  .code-block .cm { color: #6b7280; font-style: italic; }
+  .code-block .num { color: #fbbf24; }
+  .code-block .op { color: #f472b6; }
+  .code-block .tp { color: #22d3ee; }
+  .code-block .hl { background: rgba(192, 132, 252, 0.15); border-radius: 4px; padding: 0 2px; }
+
+  .inline-code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13.5px;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 6px;
+    padding: 2px 8px;
+    color: var(--accent-1);
+  }
+
+  /* ===== Command step cards ===== */
+  .step-card {
+    display: flex;
+    gap: 16px;
+    margin: 18px 0;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+  }
+  .step-num.step-1 { background: linear-gradient(135deg, var(--accent-1), #8b7bff); }
+  .step-num.step-2 { background: linear-gradient(135deg, var(--accent-2), #4cc9f0); }
+  .step-body { flex: 1; }
+  .step-body .step-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+  .step-body .step-desc {
+    font-size: 14.5px;
+    color: var(--text-secondary);
+  }
+
+  /* ===== Highlight box ===== */
+  .highlight-box {
+    background: rgba(108, 99, 255, 0.06);
+    border-left: 4px solid var(--accent-1);
+    border-radius: 0 12px 12px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .highlight-box.warning {
+    background: rgba(249, 115, 22, 0.06);
+    border-left-color: var(--accent-3);
+  }
+  .highlight-box.success {
+    background: rgba(16, 185, 129, 0.06);
+    border-left-color: var(--accent-4);
+  }
+  .highlight-box.info {
+    background: rgba(0, 180, 216, 0.06);
+    border-left-color: var(--accent-2);
+  }
+  .highlight-box p { margin-bottom: 0; font-size: 14.5px; }
+  .highlight-box strong { color: var(--text-primary); }
+
+  /* ===== Comparison table ===== */
+  .comparison-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 16px 0 18px;
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 14.5px;
+  }
+  .comparison-table thead th {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    color: #fff;
+    padding: 13px 18px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .comparison-table tbody td {
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.4);
+  }
+  .comparison-table tbody tr:last-child td { border-bottom: none; }
+  .comparison-table tbody tr:hover td { background: rgba(255, 255, 255, 0.7); }
+
+  /* ===== Flow diagram ===== */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 20px 0;
+  }
+  .flow-step {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    position: relative;
+  }
+  .flow-step .flow-icon { font-size: 22px; flex-shrink: 0; }
+  .flow-step .flow-text { font-size: 14.5px; color: var(--text-secondary); }
+  .flow-step .flow-text strong { color: var(--text-primary); }
+  .flow-arrow {
+    text-align: center;
+    color: var(--accent-1);
+    font-size: 18px;
+    padding: 4px 0;
+    line-height: 1;
+  }
+
+  .section-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(108, 99, 255, 0.15), transparent);
+    margin: 36px 0;
+    border: none;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 28px 0;
+    color: var(--text-tertiary);
+    font-size: 13px;
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 20px 12px; }
+    .hero { padding: 34px 20px 30px; }
+    .hero h1 { font-size: 26px; }
+    .hero p { font-size: 15px; }
+    .glass-card { padding: 22px 18px; }
+    .glass-card h2 { font-size: 19px; }
+    .code-block { padding: 14px 16px; }
+    .code-block code { font-size: 12.5px; }
+    .step-card { flex-direction: column; gap: 10px; }
+    .comparison-table { font-size: 13px; }
+    .comparison-table thead th, .comparison-table tbody td { padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ===== Hero ===== -->
+  <div class="hero">
+    <div class="hero-badge">ClickHouse 投影操作</div>
+    <h1>投影定义与物化命令</h1>
+    <p>一条命令负责「定义投影」，一条命令负责「构建存量数据」——<br>两步配合，让投影在历史数据上真正生效。</p>
+  </div>
+
+  <!-- ===== 1. 两条命令总览 ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-1">🗂️</span> 两条命令总览</h2>
+    <p>创建并启用一个投影，需要依次执行两条 <code class="inline-code">ALTER TABLE</code> 命令：</p>
+
+    <div class="step-card">
+      <div class="step-num step-1">1</div>
+      <div class="step-body">
+        <div class="step-title">ADD PROJECTION —— 定义投影</div>
+        <div class="step-desc">声明投影的结构（名称、列、排序键），登记到表的元数据中。此后新写入的数据会自动同步进投影。</div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num step-2">2</div>
+      <div class="step-body">
+        <div class="step-title">MATERIALIZE PROJECTION —— 物化投影</div>
+        <div class="step-desc">针对表中已存在的历史数据，真正构建投影的物理存储。存量数据不会自动物化，必须手动执行。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 2. 命令一：ADD PROJECTION ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-2">📝</span> 命令一：ADD PROJECTION（定义投影）</h2>
+
+    <div class="code-block">
+      <span class="lang-label">SQL</span>
+      <code><span class="kw">ALTER TABLE</span> sales
+<span class="kw">ADD PROJECTION</span> <span class="hl">sales_by_product</span> (
+    <span class="kw">SELECT</span> *
+    <span class="kw">ORDER BY</span> product_id
+);</code>
+    </div>
+
+    <h3>语法结构</h3>
+    <ul>
+      <li><code class="inline-code">ALTER TABLE sales</code> —— 指定要操作的表</li>
+      <li><code class="inline-code">ADD PROJECTION 投影名</code> —— 声明投影名称</li>
+      <li><code class="inline-code">SELECT ... ORDER BY ...</code> —— 定义投影的数据组织方式（普通投影）</li>
+      <li><code class="inline-code">SELECT ... GROUP BY ...</code> —— 定义聚合投影（预聚合）</li>
+    </ul>
+
+    <div class="highlight-box info">
+      <p><strong>作用：</strong>这一步只登记「投影方案」，<strong>不读取任何数据</strong>，执行速度很快。从此刻起，新写入的数据会自动按投影规则维护。</p>
+    </div>
+  </div>
+
+  <!-- ===== 3. 命令二：MATERIALIZE PROJECTION ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-3">🔨</span> 命令二：MATERIALIZE PROJECTION（物化投影）</h2>
+
+    <div class="code-block">
+      <span class="lang-label">SQL</span>
+      <code><span class="kw">ALTER TABLE</span> sales
+<span class="kw">MATERIALIZE PROJECTION</span> <span class="hl">sales_by_product</span>;</code>
+    </div>
+
+    <h3>为什么需要这一步？</h3>
+    <p>投影是「增量维护」的——<code class="inline-code">ADD PROJECTION</code> 之后的新数据会自动同步，但<strong>添加投影之前就已存在的历史数据</strong>不会自动重建，必须手动触发物化。</p>
+
+    <div class="highlight-box warning">
+      <p><strong>注意：</strong>默认是<strong>异步</strong>执行，大表可能耗时较长。可加 <code class="inline-code">SYNC</code> 关键字等待完成：<code class="inline-code">ALTER TABLE sales MATERIALIZE PROJECTION sales_by_product SYNC;</code></p>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ===== 4. 为什么需要两条命令 ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-4">🤔</span> 为什么需要两条命令？</h2>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon">📋</div>
+        <div class="flow-text"><strong>ADD PROJECTION</strong> —— 注册投影定义（元数据，不读数据）</div>
+      </div>
+      <div class="flow-arrow">▼</div>
+      <div class="flow-step">
+        <div class="flow-icon">🆕</div>
+        <div class="flow-text">新写入的数据 → <strong>自动同步</strong>进投影（无需额外操作）</div>
+      </div>
+      <div class="flow-arrow">▼</div>
+      <div class="flow-step">
+        <div class="flow-icon">🗄️</div>
+        <div class="flow-text">已存在的历史数据 → <strong>不会自动物化</strong>，需手动执行 MATERIALIZE</div>
+      </div>
+      <div class="flow-arrow">▼</div>
+      <div class="flow-step">
+        <div class="flow-icon">✅</div>
+        <div class="flow-text"><strong>MATERIALIZE PROJECTION</strong> —— 读取存量数据，按新排序键重建并写入投影存储</div>
+      </div>
+    </div>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>数据来源</th>
+          <th>是否自动物化</th>
+          <th>说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>添加投影之后</strong>新写入的数据</td>
+          <td>✅ 自动</td>
+          <td>写入主表时同步更新投影，无需额外命令</td>
+        </tr>
+        <tr>
+          <td><strong>添加投影之前</strong>已存在的数据</td>
+          <td>❌ 需手动</td>
+          <td>必须执行 <code class="inline-code">MATERIALIZE PROJECTION</code> 构建</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight-box success">
+      <p><strong>结论：</strong>如果表是空的，或不需要查询历史数据，可以只执行 <code class="inline-code">ADD PROJECTION</code>；否则两条命令都要执行。</p>
+    </div>
+  </div>
+
+  <!-- ===== 5. 常用配套命令 ===== -->
+  <div class="glass-card">
+    <h2><span class="icon icon-accent-2">🧰</span> 常用配套命令</h2>
+
+    <h3>物化（同步等待）</h3>
+    <div class="code-block">
+      <span class="lang-label">SQL</span>
+      <code><span class="kw">ALTER TABLE</span> sales
+<span class="kw">MATERIALIZE PROJECTION</span> sales_by_product <span class="kw">SYNC</span>;</code>
+    </div>
+
+    <h3>删除投影</h3>
+    <div class="code-block">
+      <span class="lang-label">SQL</span>
+      <code><span class="kw">ALTER TABLE</span> sales
+<span class="kw">DROP PROJECTION</span> sales_by_product;</code>
+    </div>
+
+    <h3>查看投影是否命中（EXPLAIN）</h3>
+    <div class="code-block">
+      <span class="lang-label">SQL</span>
+      <code><span class="kw">EXPLAIN</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> sales
+<span class="kw">WHERE</span> product_id = <span class="num">42</span>;</code>
+    </div>
+    <p>输出中如果出现投影名称，说明查询已命中该投影。</p>
+
+    <div class="highlight-box warning">
+      <p><strong>提示：</strong><code class="inline-code">DROP PROJECTION</code> 会同时删除对应的物理数据，操作前请确认不再需要。</p>
+    </div>
+  </div>
+
+  <!-- ===== Footer ===== -->
+  <div class="footer">
+    <p>ClickHouse 投影定义与物化命令详解 · 持续学习中</p>
+  </div>
+
+</div>
+
+</body>
+</html>

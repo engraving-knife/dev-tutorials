@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实时湖仓面试题100道 · 由浅入深</title>
+<style>
+  :root{
+    --ink:#1c2b4a;
+    --ink-soft:#5a6b8c;
+    --brand:#4f8bff;
+    --brand-2:#7c5cff;
+    --mint:#22c7a8;
+    --amber:#ffb547;
+    --rose:#ff6b9d;
+    --bg-1:#eaf7ff;
+    --bg-2:#f0ecff;
+    --bg-3:#e9fbf4;
+    --card-glow:rgba(255,255,255,.55);
+    --shadow:0 20px 45px -18px rgba(59,95,150,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:"PingFang SC","Microsoft YaHei","Helvetica Neue",system-ui,sans-serif;
+    color:var(--ink);
+    line-height:1.85;
+    background:linear-gradient(135deg,var(--bg-1) 0%,var(--bg-2) 45%,var(--bg-3) 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+  }
+  /* 漂浮装饰圆 */
+  .orb{position:fixed;border-radius:50%;filter:blur(10px);opacity:.55;z-index:0;pointer-events:none;animation:float 18s ease-in-out infinite}
+  .orb-1{width:340px;height:340px;background:radial-gradient(circle,#a5d8ff,transparent 70%);top:-80px;left:-80px}
+  .orb-2{width:300px;height:300px;background:radial-gradient(circle,#e0d7ff,transparent 70%);bottom:-60px;right:-60px;animation-delay:-6s}
+  .orb-3{width:240px;height:240px;background:radial-gradient(circle,#c6f5e6,transparent 70%);top:40%;left:70%;animation-delay:-11s}
+  @keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-26px) scale(1.05)}}
+
+  .wrap{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:48px 22px 90px}
+
+  /* ===== Header ===== */
+  header{text-align:center;margin-bottom:34px}
+  .kicker{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:8px 18px;border-radius:999px;
+    background:linear-gradient(90deg,rgba(79,139,255,.16),rgba(124,92,255,.16),rgba(34,199,168,.16));
+    border:1px solid rgba(255,255,255,.7);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    font-size:13px;letter-spacing:2px;color:var(--ink-soft);font-weight:600;
+    box-shadow:0 8px 20px -10px rgba(79,139,255,.4);
+  }
+  h1{
+    font-size:clamp(30px,5vw,46px);margin:18px 0 6px;letter-spacing:1px;font-weight:800;
+    background:linear-gradient(92deg,#2b6bee,#7c5cff 55%,#15b89b);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{color:var(--ink-soft);font-size:15px;margin:0 auto;max-width:640px}
+  .stats{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:24px 0 4px}
+  .stat{
+    padding:10px 20px;border-radius:16px;
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    background:var(--card-glow);box-shadow:0 12px 28px -16px rgba(59,95,150,.4);
+    border:1px solid rgba(255,255,255,.75);font-size:13px;color:var(--ink-soft);font-weight:600;
+  }
+  .stat b{font-size:20px;display:block;color:var(--ink);line-height:1.3}
+
+  /* ===== Controls ===== */
+  .controls{position:sticky;top:14px;z-index:20;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.8);border-radius:20px;
+    padding:14px 16px;box-shadow:0 14px 34px -18px rgba(59,95,150,.45);margin-bottom:26px}
+  .controls-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .search{flex:1;min-width:200px;position:relative}
+  .search input{width:100%;padding:10px 14px 10px 40px;border-radius:12px;border:1px solid rgba(120,140,190,.3);
+    background:rgba(255,255,255,.8);font-size:14px;outline:none;transition:.2s}
+  .search input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(79,139,255,.18)}
+  .search .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.5}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:7px 14px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;
+    background:rgba(255,255,255,.75);border:1px solid rgba(120,140,190,.25);color:var(--ink-soft);transition:.2s;user-select:none}
+  .chip:hover{border-color:var(--brand);color:var(--brand)}
+  .chip.active{color:#fff;border-color:transparent;
+    background:linear-gradient(90deg,var(--brand),var(--brand-2));box-shadow:0 8px 18px -8px rgba(79,139,255,.7)}
+  .level-chips{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px dashed rgba(120,140,190,.25);padding-top:12px}
+  .level-chips .chip-l{padding:6px 13px;border-radius:10px;font-size:12px;cursor:pointer;font-weight:600;transition:.2s;border:1px solid rgba(120,140,190,.25)}
+  .chip-l.c1.active{background:#dff2ff;border-color:#7cc2ff;color:#1d6fd1}
+  .chip-l.c2.active{background:#ece5ff;border-color:#b39dff;color:#6a48e0}
+  .chip-l.c3.active{background:#e7fbf3;border-color:#67d9bc;color:#12886f}
+  .result-count{margin-left:auto;font-size:12px;color:var(--ink-soft)}
+
+  /* ===== Category label ===== */
+  .cat-label{
+    display:flex;align-items:center;gap:10px;margin:34px 0 16px;
+    font-size:19px;font-weight:800;letter-spacing:.5px;color:var(--ink);
+  }
+  .cat-label::after{content:"";flex:1;height:1px;
+    background:linear-gradient(90deg,rgba(120,140,190,.4),transparent)}
+  .cat-tag{font-size:12px;padding:4px 11px;border-radius:999px;font-weight:700;color:#fff;
+    background:linear-gradient(90deg,var(--brand),var(--brand-2))}
+
+  /* ===== Question card ===== */
+  .cards{display:grid;grid-template-columns:1fr;gap:16px}
+  .card{
+    border-radius:20px;padding:0;overflow:hidden;
+    background:var(--card-glow);border:1px solid rgba(255,255,255,.8);
+    box-shadow:0 16px 38px -20px rgba(59,95,150,.4);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    transition:transform .25s,box-shadow .25s;
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 24px 48px -20px rgba(59,95,150,.5)}
+  .q-head{padding:18px 20px;cursor:pointer;display:flex;gap:14px;align-items:flex-start;user-select:none}
+  .q-num{flex:none;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:15px;color:#fff;letter-spacing:.5px}
+  .q-ttl{flex:1}
+  .q-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+  .lvl{font-size:11px;padding:2px 9px;border-radius:999px;font-weight:700}
+  .lvl.l1{background:#e3f2ff;color:#1d6fd1}
+  .lvl.l2{background:#eee8ff;color:#6a48e0}
+  .lvl.l3{background:#e3f8f1;color:#12886f}
+  .lvl.lh1{background:#ffe9f3;color:#d6336c}
+  .q-text{font-size:16px;font-weight:700;color:var(--ink);line-height:1.6}
+  .arrow{margin-left:auto;flex:none;align-self:center;width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;background:rgba(79,139,255,.12);color:var(--brand);
+    font-weight:800;transition:transform .3s;font-size:14px}
+  .card.open .arrow{transform:rotate(180deg)}
+  .a-wrap{max-height:0;overflow:hidden;transition:max-height .5s ease;background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.1))}
+  .card.open .a-wrap{max-height:900px}
+  .a-body{padding:4px 20px 20px}
+  .a-body::before{content:"◈ 回答";display:inline-block;font-size:12px;font-weight:700;letter-spacing:1px;
+    color:var(--mint);margin-bottom:6px;background:rgba(34,199,168,.1);padding:3px 10px;border-radius:8px}
+  .a-body p{margin:8px 0;font-size:14.5px;color:#33415e}
+  .a-body .lead{font-weight:600;color:#26345a}
+  .a-body ul{margin:6px 0;padding-left:20px}
+  .a-body li{margin:4px 0;font-size:14px;color:#33415e}
+
+  footer{text-align:center;margin-top:46px;color:var(--ink-soft);font-size:13px;opacity:.8}
+  .hint{text-align:center;font-size:13px;color:var(--ink-soft);margin-bottom:6px}
+
+  @media(min-width:900px){.cards{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="wrap">
+  <header>
+    <span class="kicker">数据架构 · 实时计算 · 湖仓一体</span>
+    <h1>实时湖仓面试题 · 100道</h1>
+    <p class="sub">从「什么是湖仓一体」到「如何设计一套完整的实时湖仓方案」，由浅入深覆盖六大主题<br>点击任意题目即可揭示「面试者视角」的回答</p>
+    <div class="stats">
+      <div class="stat"><b id="statTotal">100</b>道题目</div>
+      <div class="stat"><b id="statLevel1">30</b>初级</div>
+      <div class="stat"><b id="statLevel2">40</b>中级</div>
+      <div class="stat"><b id="statLevel3">30</b>高级</div>
+      <div class="stat"><b>6</b>大主题</div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="controls-row">
+      <div class="search">
+        <span class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+        <input id="search" type="text" placeholder="搜索关键词，如：Watermark、Checkpoint、Upsert、小文件…">
+      </div>
+      <span class="result-count" id="resultCount"></span>
+    </div>
+    <div class="chips" id="catChips"></div>
+    <div class="level-chips" id="levelChips">
+      <span class="chip-l c1" data-l="1" onclick="toggleLvl(1)">初级</span>
+      <span class="chip-l c2" data-l="2" onclick="toggleLvl(2)">中级</span>
+      <span class="chip-l c3" data-l="3" onclick="toggleLvl(3)">高级</span>
+    </div>
+  </div>
+
+  <div id="content"></div>
+  <footer>点击卡片标题展开/收起答案 · 建议配合实战项目食用效果更佳</footer>
+</div>
+
+<script>
+const DATA = [
+{c:0,n:"01",lv:1,q:"什么是湖仓一体（Lakehouse）？",a:"我认为湖仓一体是把数据仓库的ACID事务、Schema约束、治理能力，与数据湖的低成本、开放性存储（Parquet/ORC + S3/OSS）结合起来的架构。它在对象存储上用统一表格式（Iceberg、Hudi、Delta Lake）做规范层，既能让Spark/Flink做批和流计算，也能让查询引擎直接读湖上数据，避免了数据仓库和数据湖两套体系的割裂与重复搬数。"},
+{c:0,n:"02",lv:1,q:"数据湖和数据仓库的核心区别是什么？",a:"数据湖是 write-schema-on-read，先存后理解，存储便宜但质量松，适合原始数据存档和探索；数据仓库是 schema-on-write，建模严格、性能好但成本高。面试时我通常强调：湖重在“存、快、开放”，仓重在“治、稳、好查”，而湖仓一体要融合两者优点。"},
+{c:0,n:"03",lv:1,q:"什么是实时湖仓？和离线湖仓的区别？",a:"实时湖仓指数据从产生到可查询的延迟很短（秒级到分钟级），通过 FLink 把 Kafka/CDC 的流式数据直接写入湖仓的表格式中，支持流读流写、流读批写。区别主要在于：离线是 T+1 批量同步，实时是增量+微批+近实时；实时对写入性能、小文件治理、一致性要求更高。"},
+{c:0,n:"04",lv:1,q:"实时湖仓常见的开源组件有哪些？",a:"计算层主流是 Apache Flink（流）、Spark（批）、Trino/Presto（查询）；存储/表格式是 Iceberg、Hudi、Delta Lake 三选一；底层存储用 OSS/S3 等对象存储；采集用 Flink CDC / Debezium / Canal 把 MySQL 等数据库的 binlog 实时同步进来；调度和元数据还有 Dinky、DolphinScheduler、独立 Metastore。我一般会画一条「采集→计算→表格式→查询」链路来说明。"},
+{c:0,n:"05",lv:1,q:"湖仓一体相比传统数仓的核心优势是什么？",a:"核心是四点：一是开放格式，不被厂商绑定，多种引擎共享一份数据；二是低成本存储加云原生扩展；三是支持流批一体，一份数据同时服务离线和实时；四是面向 AI 和探索分析更友好，能直接存非结构化+半结构化数据。我会补充：它本质上解决的是“数据孤岛”和“多份拷贝”问题。"},
+{c:0,n:"06",lv:1,q:"流批一体指的是什么？为什么重要？",a:"流批一体是指用同一套 API、同一份数据、同一个引擎处理离线（批）和实时（流）两条路径。重要在于避免“两套开发、两套口径”，保证实时和离线算出的指标一致。Flink SQL / Spark Structured Streaming 就是朝这个目标演进。我会强调它是湖仓的“胶水”，让实时离线口径收口。"},
+{c:0,n:"07",lv:1,q:"湖仓表格式强调的 ACID 特性指什么？",a:"指事务的原子性、一致性、隔离性、持久性。在数据湖上：原子性让我一个 commit 要么全成功要么全失败，不再看到半截数据；隔离性支持多任务并发读写而不互相脏读；持久性保证已提交数据不丢失，配合时间旅行还能回溯历史。这是传统数据湖最缺、湖仓层最核心的价值。"},
+{c:0,n:"08",lv:1,q:"元数据服务在湖仓中起什么作用？",a:"元数据把“一堆文件”组织成“一张表”。我的理解是它维护表结构、分区、文件的清单（如 Iceberg 的 Metadata 文件）、以及版本快照。查询时引擎先读元数据拿到文件列表再扫描数据，这样省掉目录扫描、支持分区裁剪和文件剪枝，是湖仓性能和功能（时间旅行、增量读）的基石。"},
+{c:0,n:"09",lv:1,q:"为什么要用对象存储做湖仓底层，而不是 HDFS？",a:"对象存储（S3/OSS）便宜、按量付费、容量无限、免运维，天然适合存海量数据。相比 HDFS 它没有 NameNode 单点，扩展性强。代价是少了 append/modify 支持、延迟略高，所以依赖表格式层通过“写新文件+提交清单”的方式来做更新。面试我会强调：湖仓的“冷热分层+廉价存储”都要靠对象存储体现实惠。"
+
+},
+{c:0,n:"10",lv:1,q:"什么是分区（Partition）和分桶（Bucketing）？",a:"分区是按某个字段（如日期）把表切成一个目录一层，好处是查询按分区裁剪，只扫需要的数据。分桶是把同一分区内数据按哈希再切成固定数量的文件，配合等值 Join 能实现桶间局部性，减少 shuffle。我会说：分区是横向按维度切，分桶是纵向按哈希切，二者都是为了少读数据。"},
+{c:0,n:"11",lv:1,q:"什么是 Schema Evolution（Schema 演进）？为什么重要？",a:"Schema 演进指表结构能在线增删改字段，不用重写历史数据。这很重要，因为业务字段会变，而湖上数据是海量的，重写不现实。Iceberg/Hudi/Delta 都支持列级演进，比如表格式层通过在元数据里做列映射，改列名、加列都不动文件。我会强调这是选湖仓表格式的一个关键加分项。"},
+{c:0,n:"12",lv:1,q:"实时湖仓和 Kafka+ClickHouse 这种“实时链路”区别在哪？",a:"Kafka+ClickHouse 是典型的实时指标链路，快但偏“存中间结果”，OLAP 引擎有自己的存储，和批数据湖不互通、回溯和建模弱。而实时湖仓把流数据也沉淀到统一低成本存储，能批能流能查、有 ACID 和时间旅行。我的观点：两者不是替代而是分工，冷热和口径差异场景可以配合使用。"},
+
+{c:1,n:"13",lv:1,q:"什么是实时计算？什么是无界流？",a:"实时计算指数据进来到结果产出是低延迟、持续处理的。数据流分有界（批，有结束）和无界（流，持续不断）。实时任务处理的是无界流，核心要解决“没有终点怎么持续算、怎么保证有序”。我会外别强调：流式计算是 scale 状态 + 窗口 + 时间语义来处理无界数据。"},
+{c:1,n:"14",lv:1,q:"事件时间、处理时间、摄取时间分别指什么？",a:"处理时间是算子处理数据的机器时刻；摄取时间是数据进入系统的时间；事件时间是业务事件真正发生的时间（如下单时刻），最贴近真实语义但要处理乱序。我的观点：埋点、订单这类业务统计必须用事件时间；纯速度监控可以用处理时间。这也是 Watermark 存在的根本原因。"},
+{c:1,n:"15",lv:1,q:"什么是 Watermark？乱序数据怎么处理？",a:"Watermark 表示“早于这个时间点的数据不会再到了”，用来触发窗口计算并容忍迟到。它解决事件时间下数据乱序的问题。我会答：窗口末尾 + 允许迟到时间，例如 Watermark=窗口最大事件时间-允许迟到，窗口关闭；还没关之前来的晚到数据算进窗口，关后再来的走迟到侧输出流或丢弃。"},
+{c:1,n:"16",lv:1,q:"Flink 的四层抽象是哪四层？",a:"由低到高是：Stream 无界流 → DataStream（流 API）→ 更高层 Table/SQL → Flink SQL 的声明式 API。Shorthand 我会说 DataStream API 灵活可精细控制状态，Table/SQL 声明性好、易用易维护，还自带优化。选型主张：默认用 SQL，复杂状态逻辑才下沉 DataStream。"},
+{c:1,n:"17",lv:1,q:"Flink 的 JobManager、TaskManager 各负责什么？",a:"JobManager 是“中央大脑”，负责任务调度、checkpoint 协调、作业管理和恢复；TaskManager 是“工人”，实际执行算子、跑算子任务并管理本地状态。我会强调在架构理解上抓住“掌控与执行分离”，这也是 Flink 高可用和容错的基础。"},
+{c:1,n:"18",lv:1,q:"Flink 里的状态（State）是什么？为什么要用？",a:"状态是算子保存的、跨事件累积的中间结果，比如计数、去重集合、维表缓存。它是流计算做“有状态加工”的前提——没有状态，窗口、去重、Join 都无从谈起。我一般按 Keyed State（ValueState、ListState、MapState、ReducingState）和 Operator State 来组织回答。"},
+{c:1,n:"19",lv:1,q:"Checkpoint 是怎么实现的？",a:"Checkpoint 基于分布式快照 + barriers（屏障）机制。Source 注入带编号的 barrier，随数据在算子间广播，每个算子收到全部输入的 barrier 就异步把状态做快照存到远端（HDFS/OSS），同时通过对齐机制保证快照一致性。我强调核心是“劈开数据制造一致性点”，这是 Exactly-Once 的基石。"},
+{c:1,n:"20",lv:1,q:"Checkpoint 和 Savepoint 的区别？",a:"Checkpoint 是自动、周期性、用于故障恢复的轻量快照，不能用来修改作业；Savepoint 是手动、语义化、用于运维（下线、升级、改逻辑后重放）的一致性点。我会说一句话总结：Checkpoint 保“运转”，Savepoint 保“改造”。"},
+{c:1,n:"21",lv:1,q:"At-least-once、At-most-once、Exactly-once 的区别？",a:"At-most-once 每条数据最多处理一次（可能丢）；At-least-once 至少一次（可能重复）；Exactly-once 恰好一次（不丢不重）。正好一次最难，因为要状态快照 + 两阶段提交到外部系统配合。我会强调：Exactly-once 通常指“状态和输出整体的一致性”，端到端还要下游幂等配合。"},
+{c:1,n:"22",lv:1,q:"两阶段提交如何实现端到端 Exactly-once？",a:"Flink 的 TwoPhaseCommitSinkFunction 在 Flink 侧做两阶段预提交/提交，配合 Kafka 这种支持事务的 Sink 实现端到端恰好一次。我按三步讲：pre-commit 阶段把数据写进 Kafka 事务但未提交；checkpoint 成功后协调者推进到 commit；失败则 abort 回滚。关键前提是下游必须支持事务，否则只能靠幂等。"},
+{c:1,n:"23",lv:1,q:"什么是背压（Backpressure）？Flink 怎么处理？",a:"背压当下游处理不过来时，上游被迫放慢消耗的反向压力，防止内存爆掉。Flink 采用“基于信用度的网络缓冲”和自动降速：下游 buffer 满→上游暂停发送→Source 减速。我的理解是它让系统“聪明地减速”而不是“崩溃”，是内存安全和稳定性的保护机制。"},
+{c:1,n:"24",lv:1,q:"Flink 的窗口类型有哪些？",a:"主要有滚动窗口（Tumbling，固定不重叠）、滑动窗口（Sliding，有步长可重叠）、会话窗口（Session，按 Gap 把间隙期数据切段）、还有全局窗口。我会补充：事件时间 + 窗口时务必理解触发条件，避免重复或漏算，这是实时指标正确性的关键。"},
+{c:1,n:"25",lv:1,q:"什么是 Flink CDC？原理是什么？",a:"Flink CDC 是把数据库 binlog 解析成变更流的技术，用 Flink 消费后实时写入湖仓。核心原理是读取 MySQL binlog → 解析为 insert/update/delete 事件 → 作为流式数据源。Flink CDC 的优势是增量加全量可无缝衔接、支持整库同步。我会强调它是“实时湖仓 ODS 层”的主力通道。"},
+{c:1,n:"26",lv:1,q:"Flink SQL 和 DataStream API 怎么选？",a:"Flink SQL 声明式、易开发、自带优化器和动态表语义，适合 80% 常规 ETL 和统计；DataStream API 是过程式、需手写状态和逻辑，适合复杂状态、自定义算子、精细控制场景，性能也更好调。我的原则：先 SQL，层出了再用 DataStream 补，避免过度设计。"},
+{c:1,n:"27",lv:1,q:"什么是动态表（Dynamic Table）和连续查询？",a:"动态表是流上“随时间变化的表”，每次数据到来，这张表就更新一行。连续查询是对动态表持续增量求值的查询，输出也是动态表，最终转成变更流写下游。这是我理解 Flink SQL 流批统一的核心抽象——同一套 SQL 逻辑在批和流上都能跑。"},
+{c:1,n:"28",lv:1,q:"什么是双流 Join？难点在哪里？",a:"双流 Join 是把两条无界流按 key 关联的操作。难点在于：无界流数据是乱序、延迟到达的，关联时对方的数据可能还没来，所以要用状态缓存对方数据并设置 TTL，同时联合 Watermark 处理乱序。我也常提：状态过大是主要风险，需要有节奏地清状态、合理设 TTL。"},
+{c:1,n:"29",lv:1,q:"如何理解 Source/Sink/Transformation 的关系？",a:"Source 是数据入口（读数据），Transformation 是算子/逻辑（转换），Sink 是数据出口（写出去）。三者串成 Flink 的 Dataflow（拓扑）。本质上这是一张有向无环图 DAG，JobManager 把切分后的算子分发给 TaskManager 并行执行。我会用“入口-处理-出口”来快速答。"},
+{c:1,n:"30",lv:1,q:"水位线（Watermark）设置太大会怎样？太小呢？",a:"太大：容忍的乱序更久、窗口关得晚，指标更准但延迟高，状态占用久；太小：窗口早关、看着快但容易丢丢晚数据、指标不准。所以是“准确率 vs 延迟”的权衡。我的实践：根据数据真实延迟分布定，迟到数据走侧输出流做补偿更好，而不是无限加大 Watermark。"},
+
+{c:2,n:"31",lv:2,q:"Iceberg 的核心设计理念是什么？",a:"Iceberg 的核心是「表作为一种规范化的元数据」，一套开放格式 + 层级元数据。它把表数据组织成 Metadata 文件（快照）→ Manifest 列表 → Manifest 文件 → 数据文件。查询先读元数据清单再做文件扫描，支持时间旅行、增量读、模式演进，且不锁存储、通过快照做乐观并发。我会强调它“重规范、应用层服务（无中心服务）”的特点。"},
+{c:2,n:"32",lv:2,q:"Iceberg 是如何做时间旅行（Time Travel）的？",a:"Iceberg 每次提交生成一个新快照（新 Metadata 文件），数据文件不会立刻被删，而是可被多个快照引用。查询指定快照 id 或时间戳，就能读到“当时”的文件清单。我会补充：这天然支持回滚和数据重放，但要配合清理策略定期把过期快照删掉，避免元数据无限膨胀。"},
+{c:2,n:"33",lv:2,q:"Hudi 的 Copy-on-Write 和 Merge-on-Read 区别是什么？",a:"Copy-on-Write（COW）：更新时直接把旧文件读改写生成新文件，读得干净、但写放大；Merge-on-Read（MOR）：更新写到 log 文件，读时把 base + log 合并，写快但读更重。MorH 适合写多读少，COW 适合读多写少。Hudi 另有一键切换和 clustering 来平衡，我会按“写放大 vs 读放大”讲清选型。"},
+{c:2,n:"34",lv:2,q:"Delta Lake 的核心（事务日志）是什么？",a:"Delta Lake 用一张单写者的事务日志（transaction log，_delta_log 下的 JSON）记录每次对表的原子变更，回放日志就能恢复表最新状态，实现 ACID。它也把数据文件版本化管理支持时间回放。我会对比：Delta 早期更“单写者友好”、与 Spark 生态绑定深，Iceberg/Hudi 在多写者和生态开放性上有差异。"},
+{c:2,n:"35",lv:2,q:"Iceberg、Hudi、Delta 怎么选型？",a:"我给一套“看场景”的思路：生态开放、多引擎、注重规范，选 Iceberg；实时 upsert、写多读少、数据湖增量最近神经，若团队熟 Spark/Hive 尤其业务强 upsert 选 Hudi；深度绑定 Spark 云上 SQL 查询多、希望上手快可选 Delta。我还会补充它并非定死，很多大厂用 Flink+Iceberg 做实时湖仓、Hudi 做 CDC 到湖的 upsert。"},
+{c:2,n:"36",lv:2,q:"湖表的 Upsert（增量更新）是怎么实现的？",a:"通过主键 + 标记删除：插入新文件，并把被覆盖的旧文件用 delete 文件“逻辑删除”（或 COW 直接重写）。查询时按文件列表过滤掉删除记录。Hudi 用 MOR/COW，Iceberg 用 v2 的 delete files（position/mavation delete），Flink 则把 upsert 语义映射到 TableFormat 的 merge。我会强调“逻辑删 + 定期清理”是通用落地。"},
+{c:2,n:"37",lv:2,q:"什么是小文件问题？为什么实时写特别严重？",a:"实时任务每次微批提交都会“挖新文件”，这样数量小但文件极多，导致查询 scan 元数据开销大、NameNode/对象存储请求多、性能差。实时流写入天然分批所以最严重。我的处理：合并写入（尽量一次提交一批）、定期 compaction/optimize、控制并行度和文件目标大小，甚至用 table service 自动小文件合并。"},
+{c:2,n:"38",lv:2,q:"什么是 Compaction（压缩/merge）？",a:"Compaction 是把多个小文件或 base+log 合并成更大、更整的文件，既减少文件数，又“物化”MOR 的 log 合并。它以异步后任务跑，不影响在线写入。我会强调关键参数是文件目标大小和触发阈值，且做完要保证幂等（带版本/事务保护），否则会和写入冲突。"},
+{c:2,n:"39",lv:2,q:"什么是 Z-Order / 布局优化？",a:"Z-Order 是按多个维度字段做空间填充排序，使得相近的数据在文件中“就近”，配合查询剪枝能大幅减少读取量（常见于多列过滤）。数据局部性排序则按单一排序键布局。我的观点：它是在“查询要快”和“文件文件数/排序成本”之间做 trade-off，常用在对 ads/聚合表做布局优化。"},
+{c:2,n:"40",lv:2,q:"冰峰/增量读取（Incremental Read）怎么实现？",a:"表格式层记录每次提交的元数据变更，增量读就是只读取自某个版本/时间之后“新提交”的文件。Iceberg 用 snapshot 区间读新文件，Hudi 用 timeline 的 commit 增量读，Delta 走版本对比。这就支持了“流任务读湖变更当输入”，实现湖到湖的离在线联动。我会补充这是实现“仓+流”统一重要一环。"},
+{c:2,n:"41",lv:2,q:"什么是表服务（Table Service）？什么时候跑？",a:"表服务是表格式层提供的“后台管理任务”，如 compaction、小文件合并、清过期版本、统计信息更新。它们不阻塞主写入，异步执行。重点：主写入负责“写”，表服务负责“养”——频率过高增加负载，过低则文件膨胀，生产上要按数据量的增长节奏调度。"},
+{c:2,n:"42",lv:2,q:"Schema 演进过程中如何保证数据不坏？",a:"靠表格式层的元数据列映射 + 列类型升级规则。加列/改列名/删列都在元数据里记录映射，不重写历史文件，读时按新 schema 解释旧文件。同时做类型兼容校验（如 int 允许升级为 long/string 但要防类型丢失）。关键是“保证旧文件也能按新 schema 正确读出”，我会补充一定在测试环境先验证兼容链。"},
+{c:2,n:"43",lv:2,q:"并发写冲突怎么解决？",a:"靠乐观并发 + 快照版本校验，或者「原子比较并交换」（compare-and-swap）的 Catalog 支持。两个 writer 同时提交，后提交的一方因元数据版本已变而冲突失败。Iceberg 支持多 writer 通过快照重试，Hudi 早期单写者约束强，Delta 也默认单写者。我会强调：生产多用“单写者+合并策略”或分区级隔离来减少冲突。"},
+{c:2,n:"44",lv:2,q:"主键约束在湖表上有保证吗？",a:"严格讲湖上的“主键”更多是逻辑语义而非强数据库约束。Hudi、Delta 有主键字段定义并据此做 upsert，但多写者且乱序时可能存在冲突或旧值覆盖新值的问题。落地时要靠：写入端保证同一主键顺序、处理乱序（如事件时间/版本号判断），加上写者尽量唯一。我会说：满足大多数业务足够，但别当 ACID 强约束读。"},
+{c:2,n:"45",lv:2,q:"Iceberg 的 DataFiles 和 Manifest 文件是什么关系？",a:"DataFiles 是实际 Parquet/ORC 数据文件，Manifest 是描述这些文件的清单（文件名、分区、统计信息、位置）。一个快照引用若干 Manifest，Manifest 又引用到 DataFiles。查询先读清单拿“哪些文件可能含目标数据”，再用统计做剪枝，避免全表扫。这就是 Iceberg 高效查询和文件管理的核心结构。"},
+{c:2,n:"46",lv:2,q:"Flink 如何把数据写入 Iceberg/Hudi？",a:"用对应的 Flink Connector 的 Sink，把上游流按分区/桶写进表格式。过程往往带 CDC/upsert 语义：key 相同的行为 update 走 delete+insert 或 merge 到表格式，旁边还可开异步 compression。常见搭配 Flink SQL 的 CREATE TABLE WITH 指定 'connector'='iceberg'/'hudi'。我会强调注意“写小文件”和“提交频率”两个生产痛点。"},
+{c:2,n:"47",lv:2,q:"何时用 Parquet/ORC 这类列式存储？有什么好处？",a:"湖仓表默认用列式存储。好处：列式天然利于聚合和投影下推（只读需要的列）、压缩率高、配合压缩编码省存储省 IO。因此查询分析和 OLAP 非常适合，而点查和单行更新不适合。我会补充在做宽表、dws/ads 时尤其要按查询模式设计列序和排序。"},
+{c:2,n:"48",lv:2,q:"什么是 Clustering / Optimization 任务？",a:"它是对已存在文件做重写排序（按排序键/Z-Order），把小文件合并、按列重排，从而提升后期查询性能和文件整洁度。本质上就是“布局优化服务”，异步执行，通常由表服务或外部调度触发。我会强调它和 compaction 常一起讲但侧重文件“摆位”而不是仅“合并”。"},
+{c:2,n:"49",lv:2,q:"Iceberg 的乐观并发如何避免被部分覆盖（dirty write）？",a:"每个写者从 Catalog 读当前元数据版本，提交时用 compare-and-swap 校验版本号。若中间有别的 writer 改了表，自己的提交条件不符就失败重试（提交是新快照链的追加）。配合快照隔离，读也是“看某个版本”，不会读半截。我答：做到“写者原子提交、读者版本一致”，从而杜绝脏覆盖。"},
+{c:2,n:"50",lv:2,q:"数据回放（重发）在湖仓里怎么做？",a:"两种回放：一是基于表格式时间旅行/增量区间，把特定时间段的数据重新加载到下游（重算）；二是 Rabbit/ Kafka 从 checkpoint 或 offset 重刷。我建议答完整链路：先定位影响时段，用 delete+重算或 upsert 覆盖写入，最后用 time travel 审计前后数据。生产要配合幂等，避免重复累加。"},
+
+{c:3,n:"51",lv:2,q:"实时数仓的分层是怎么设计的？ODS/DWD/DWS/ADS？",a:"常见四层：ODS 贴源层存原始数据（近 Kafka/湖上）；DWD 明细维层做清洗、脱敏、宽表化、主键去重；DWS 汇总层按主题做轻度聚合宽表；ADS 应用层面向报表/RIT。实时版本每层都可用流或批+流混合构建，但要注意各层延迟、一致性口径统一。我常强调：分层是为了“串行依赖、易治理、口径清晰”，别过度分层堆链路。"},
+{c:3,n:"52",lv:2,q:"实时数仓和离线数仓为什么常常两套？能统一吗？",a:"两套是因为历史原因：实时要低延迟、离线要大批量，各用各的栈。湖仓一体 + 流批一体的意义正是“同一份湖表，批引擎跑离线、流引擎跑实时”，统一存储和口径，减少重复数据和口径漂移。我会说：统一是趋势，但现实常是“存储统一、处理分但输严格校准口径”，逐步收敛。"},
+{c:3,n:"53",lv:2,q:"什么是宽表？怎么做实时宽表？",a:"宽表是把多张明细/维表“一张表大而扁平”地聚合，减少查询 join、加速分析。实时宽表通过流式 join（多流/流+维表）在 Flink 里拼成，写进湖表或 OLAP。难点是 join 时序、状态膨胀、以及晚到维表数据如何回补。我会强调“宽表是一种缓存和建模手段，字段越多也不是越好”。"},
+{c:3,n:"54",lv:2,q:"实时指标计算有哪些套路？",a:"套路：先确定口径（窗口、粒度、去重还是计数），再做流式聚合（增量窗口 agg + 状态），配 be late 处理，最后写 DWS。常见模板：窗口聚合核算、多级 Rolling up 汇总、UV 用 HyperLogLog 近似（位图）、订单金额用 sum 状态。我会补充“冷热指标分开”和“口径文档化”是工程化重点。"},
+{c:3,n:"55",lv:2,q:"实时 ODS 怎么构建？",a:"实时 ODS 是从源头把全量镜像+增量变更实时同步到湖表。通常：先做全量快照（Snapshot），再切 Flink CDC 收 binlog 增量，用 upsert 语义落到湖表（Hudi/Iceberg v2 + CDC）。关键点：全量增量无缝切换、顺序一致、主键去重、以及写小文件和提交频率控制。我常比喻它是“数据库在湖里的实时影子”。"},
+{c:3,n:"56",lv:2,q:"维表关联在实时计算里怎么实现？",a:"常见四法：广播维表（小维表，每任务全量加载进内存状态，变化用广播流更新）；LRU 缓存 + 查外部（lookup join，截 RTDB/MySQL）；用事件流 join（维表也做流）；用 Flink SQL 的 FOR SYSTEM_TIME 做时态 join。我会按“维表大小 + 变更频率”选：小的广播，中的 lookup，大的走 Flink 流式 join。"},
+{c:3,n:"57",lv:2,q:"多流关联的时序/晚到问题怎么解决？",a:"多流关联本质是“时间对齐”：用 Watermark 统一事件时间，把共享 key 的双方各缓存到状态（带 TTL），等对方匹配。晚到的数据处理方式：用 id 等宽容忍 + 侧输出、以及时态 join 的 AS OF 语义取“当时值”。我的经验：能靠维表/外部存储规避“无界 join”的状态爆炸，就少做流 join。"},
+{c:3,n:"58",lv:2,q:"实时任务的监控告警应该看哪些指标？",a:"我会分四块：算子层（吞吐量、背压时间、Watermark 进度、checkpoint 时长与成功数）；状态层（状态大小、RocksDB 使用、GC）；资源层（TaskManager CPU/内存/网络）；业务层（输入输出条数比、数据延迟、指标合理性验准）。并配“checkpoint 连续失败 + 延迟超过阈值 + 数据异常波”的自动告警。"},
+{c:3,n:"59",lv:2,q:"实时任务失败后怎么恢复不丢数据？",a:"靠 Flink 的 checkpoint 自动恢复：从最近一次 checkpoint 重建作业状态，再从 Source 的 offset 重放数据；配合端到端恰好一次（如 Kafka 两阶段提交）保证下游不重复。要点是恢复时“状态重建 + 输出重放要幂等”。我会补充做好 Savepoint 用于手动恢复和升级前后衔接。"},
+{c:3,n:"60",lv:2,q:"数据补偿（重跑）机制怎么设计？",a:"对实时链路要提供“重算通道”：一是湖表时间旅行/增量区间重放；二是任务从 Savepoint/指定 offset 重跑；三是把降级到批任务用离线重算后以 upsert 覆盖。补偿最关键是幂等（重复不大）、可校验（前后对账）、以及指定时间窗口的可重入。我的答案核心：设计时就留“重算入口”，别等故障了再来造。"},
+{c:3,n:"61",lv:2,q:"实时任务的 SLA 怎么保障？",a:"SLA 拆成“延迟 + 可用性 + 数据质量”三件事：延迟靠背压监控和容量预留；可用性靠 checkpoint/Savepoint + HA + 多可用区 + 降级开关；数据质量靠每层对账（输入输出行数、指标合理性）+ 延迟告警 + 黑洞检测。我强调“实时更怕悄悄坏”，自动对账和兜底降级比单纯性能优化更重要。"},
+{c:3,n:"62",lv:2,q:"实时任务如何做数据对账？",a:"常见做法：对账“输入条数 vs 输出条数”、“各 DWS 关键指标与离线日对”，以及用统一口径的基准表做差。实时内部可以端口径校验算子或定期采样比对。我的观点：对账要做成“可观测指标 + 定期跑批校验”，把“算错”和“算慢”都兜住。"},
+{c:3,n:"63",lv:2,q:"实时湖仓里怎么处理主键去重（最终一致）？",a:"用状态 + upsert：在 Flink 里维护 keyed state，同一主键晚来的数据用事件时间或版本号判断是否覆盖（取最新），然后按更新覆盖湖表。好处是“只输出最新一条”，达成最终一致。让我补充两个坑：状态过期导致重复、乱序覆盖导致错版本，所以要 TTL + 显式版本字段。"},
+{c:3,n:"64",lv:2,q:"实时指标存储（OLAP）怎么选？",a:"按查询模式分：明细+大宽表点查用 Doris/ClickHouse；高并发即查即出的指标用 StarRocks/ClickHouse 或缓存；湖上即席分析用 Trino/Iceberg。我的建议是“热指标进 OLAP + 标准明细沉淀湖”，二者联动，别把湖当 OLAP 用（查询太慢）。实时湖仓和 OLAP 常搭档而非互相替代。"},
+{c:3,n:"65",lv:2,q:"实时 ETL 常用的算子有哪些？",a:"我会列：过滤（Filter）、映射/转换（Map）、清洗（脱敏、格式化）、去重（主键+状态）、分组聚合（KeyBy+window/agg）、维表关联（Lookup/时态 join）、以及输出侧流（Side Output 丢晚数据）。一句话：实时 ETL 就是“过滤+清洗+关联+聚合+落湖”。"},
+{c:3,n:"66",lv:2,q:"Flink 中「布隆/位图/HLL」这类近似去重是怎么用的？",a:"用来做超大 key 的 UV 去重，内存友好。HyperLogLog（HLL）只存极简结构就能数 UV，命中状态小、可近似；位图适合整数 ID。Flink 里常用 state 内放 HLL 或者用 StreamSQL + bitand 自定义 UDAF。我强调“近似算法 trade-off 精度换内存”，UV 这种量级大的场景很适用。"},
+{c:3,n:"67",lv:2,q:"实时任务背压上升，排查思路是什么？",a:"先看链路位置：用 UI 看哪个算子背压最长、Watermark 是否停滞；再查瓶颈：是 CPU 高（计算重）、还是 IO 高（外部查找/写湖慢）、还是 GC/状态慢。我的排查顺序是：定位算子→看资源与 IO→看是否有慢外部依赖→优化并行度或算子实现。避免“全盘加并行度”瞎调。"},
+{c:3,n:"68",lv:2,q:"Flink 状态过大会有什么影响？怎么避免？",a:"大状态会带来：checkpoint 慢、内存压力、RocksDB 读写变慢、恢复慢。避免策略：合理 set TTL、裁剪保留的数据（只存必要 key）、用重分区/前缀减少 key 数量、维表别塞状态、必要时用近似的 HLL。我常答：状态“可裁剪 + 可过期”比单纯扩内存更治本。"},
+{c:3,n:"69",lv:2,q:"并行度怎么设置更合理？",a:"看链路的“关键节点和瓶颈”：Source/聚合多的算子适当扩大并行以顶吞吐，Checkpoint 效果和状态分布也要考虑。经验做法：先按流量预估，跑压测看背压和延迟，再反推；state 分布不均还要注意 key 倾斜。我不会给死数字，会讲“并行度跟着数据量和算子重量走 + 实测微调”的方法。"},
+{c:3,n:"70",lv:2,q:"数据倾斜在实时任务里怎么处理？",a:"先定位是否 key 倾斜（某个 key 数据量大）：做预聚合/加盐拆分（把热 key 打散到多并行），或拆两段（先局部后全局），或把维表热 key 单独处理。磕点：groupBy 聚合和 join 都会因为热 key 倾斜。我会强调“先诊断，再对症下药”，别一上来就加并行度。"},
+
+{c:4,n:"71",lv:3,q:"数据一致性有哪几级？湖仓更在意哪一级？",a:"从强到弱：强一致（强一致快照）、最终一致、因果一致、以及松弛的“读自己写的”。实时湖仓场景多数是“最终一致 + 可追溯”：允许短暂延迟但最终收敛，同时靠时间旅行审计。实时任务内部用 checkpoint 恰好一次，跨系统靠幂等 + 两阶段。我会明确讲：湖仓的目标不是 DB 级强一致，而是“最终一致并可验证”。"},
+{c:4,n:"72",lv:3,q:"端到端正好一次在实时湖仓里具体怎么做？",a:"拆成三段：Source（Kafka）消费用 offset；Flink 状态用 checkpoint barrier 对齐达内部恰好一次；Sink（写表格式）用两阶段提交或“写临时表+原子 switch”，保证不重复不丢。但表格式层异步相关（compaction）要保证幂等。我会答：链路越分层越想做到“端到端恰好一次”，越要对每段做对账兜底。"},
+{c:4,n:"73",lv:3,q:"什么是幂等写入？为什么对湖仓重要？",a:"幂等指同一数据重复写入结果一致，不会重复累加或出现两行。对湖仓重要是因为：重跑、报警重发、并发写很常见，若不幂等就重复。落地手段：主键 upsert（重复写只改一行）、严格文件切分（一次提交原子覆盖）、带版本号/时间戳的覆盖逻辑。我会强调“设计写入时就假设会重发”是现实的工程素养。"},
+{c:4,n:"74",lv:3,q:"数据延迟如何定义和度量？",a:"定义上分：端到端延迟（source 事件发生 → 在湖可查）、窗口延迟、以及“水位线滞后”。度量：用事件时间差、或埋“产出时刻 - 入库时刻”。我会重点提“实时不等于零延迟”，要按业务卡可接受的上限（秒/分钟），并用监控指标持续跟踪而非凭感觉。"},
+{c:4,n:"75",lv:3,q:"Kafka 的消费位点（offset）管理和提交时机怎么把握？",a:"Flink 用 checkpoint 里的 committed offset 对应一致性：开 checkpoint 时提交 offset，配合两阶段提交下游，保住“恰好一次”。手动提交要小心“提交早于处理完成”导致丢。我会讲：默认自动 checkpoint 就好，重点在于“把 offset 提交和状态提交绑在一起”，别分开。"},
+{c:4,n:"76",lv:3,q:"多个窗口水印对齐是什么意思？有什么坑？",a:"指多个 Sources/算子的 Watermark 要“取 min”，否则一个快的源会把整体往前推，导致慢的源数据被当成迟到。坑就在：多输入 join/union 时水印必须对齐（通常取各个源 watermark 的较小值），否则丢掉不完整。我会建议：多源场景显式处理 watermark strategy，别用默认。"},
+{c:4,n:"77",lv:3,q:"湖仓的查询引擎生态（Trino/Spark/Presto）怎么分工？",a:"Spark 是批处理的主力，做 ETL/重算；Trino/Presto 是即席交互查询（秒级）的主力，直接读湖表；如果想更全，可接 Flink 做流。关键点是“多引擎共享一套表格式”，各引擎做自己强项。我会讲：选择的标准是查询模式 —— 大批量批处理给 Spark，低延迟 ad-hoc 给 Trino，实时给 Flink。"},
+{c:4,n:"78",lv:3,q:"湖仓里怎么保证数据权限和安全？",a:"分层管控：存储层（对象存储权限/加密）、表格式层（Catalog 上的表/列权限）、查询层（Trino/Spark 的授权，RBAC）。敏感数据做脱敏/加密存储，血缘分分类。我的观点：实时湖仓安全要在“表格式无中心服务”的前提下靠 Catalog + 统一鉴权网关做收口，别把权限散在各引擎。"},
+{c:4,n:"79",lv:3,q:"湖仓如何做数据治理（元数据、血缘、质量）？",a:"元数据用 Catalog（如 Iceberg catalog + 自定义 meta），血缘靠引擎层（Flink/Spark）记录算子流，质量靠每层对账 + 采样校验 + 规则。我会把它讲成“湖仓的治理 = 规范 + 血缘 + 质量 + 权限”四件套，其中血缘是追踪改表/回流的根基，质量规则要能随着表和指标增长持续加。"},
+{c:4,n:"80",lv:3,q:"实时湖仓和 AI/机器学习特征怎么结合？",a:"湖仓天然是为特征存储和训练做底座：存原始特征+标签，支持时间旅行取某个时点特征、特征回放做实验，配合实时特征流（如实时算出）供在线服务。好处是同一份特征能同时服务 batch 和 online。我会提：Feature Store 往往建在湖上，而实时湖仓正好给了它“实时+可回溯”的双能力。"},
+{c:4,n:"81",lv:3,q:"冷热分层存储（分层存储）怎么做？",a:"冷热分层指活跃数据放快速/热存储、低频数据转廉价冷存储（如 OSS infrequent）。落地时有自动转储策略和查询感知。难点是“存储切分要透明给查询”。我会说：湖仓的分层不像 ClickHouse 那样 强冷热，更多是“表级别分区 + 归档策略” + 对象存储生命周期。别把冷热做成查询黑盒。"},
+{c:4,n:"82",lv:3,q:"什么场景用实时湖仓是过度的？",a:"会答“不能用银子弹”：纯低延迟高并发指标dashboard（用 OLAP 更快）、纯事务型数据库场景（湖不合适）、非常多且不可控的小市场多点接入（管理复杂）。实时湖仓适合“数据量大、分析/回溯/多引擎共享”的场景。我常讲：先问“要不要回溯、要不要共享、要不要批也能跑”，再决定要不要上实时湖仓。这也是考察工程判断力的点。"},
+{c:4,n:"83",lv:3,q:"怎么做全链路血统（Lineage）追踪？",a:"血统要贯穿：数据源→ODS→DWD→DWS→ADS 以及实时链路。常用：Flink/Spark 的 SQL 解析提取血缘（表→表、字段→字段），汇入元数据中心可视化。用户视角是“看一张图就知道某指标从哪来、改哪个表会影响谁”。我会强调：血缘要是“自动从 SQL 生成”，别人工清单，否则维护不动。"},
+{c:4,n:"84",lv:3,q:"实时湖仓依赖对象存储，它的延迟劣势怎么规避？",a:"规避手段：小文件 + 合并提交（减少对象数量）、先写本地/临时再切（减少请求）、用有文件级的去重读缓存、以及行列存储压缩减少体量。更关键的是只让“查询拿到清单+文件名”而避免目录列表扫描（表格式剪枝）。我答：表格式层的“元数据先行”正是为对抗对象存储弱目录扫描而设计。"},
+{c:4,n:"85",lv:3,q:"Iceberg v2 vs v1 的主要差异？",a:"v2 增加了 delete files（position/mavation delete）和行级删除能力，支持流式 upsert，且去掉 v1 的行级事务限制；v1 更基础，兼容和稳定度高。对实时湖仓，v2 的 delete + 事务回滚更重要。我会建议：新表尽量 v2，老表看兼容性再升级。并补充会带来 delete 文件膨胀，需配套 compaction。"},
+{c:4,n:"86",lv:3,q:"实时湖仓的容错与恢复整体设计？",a:"分层容错：计算层（Flink checkpoint/Savepoint + HA）、写湖层（事务幂等、失败不半写）、存储层（对象存储多副本 + 版本）、下游消费（offset 对账 + 幂等）。恢复时先确认“状态可重建、数据无重复、下游幂等”，再重放。我强调“宁可重启算，不可重污染”，对账与幂等是容错的安全带。"},
+{c:4,n:"87",lv:3,q:"多租户 / 资源隔离在实时湖仓怎么做？",a:"资源侧：Flink/Spark 用资源组（YARN/K8s）+ 配额隔离，避免一个任务拖垮全网；数据侧：按库/表权限 + 存储桶隔离；写湖侧：多写入要控制并行以免互相影响。我会答：“隔离分计算隔离和存储隔离两层，核心是防抖动和防越权”，并按租户做配额与监控。"},
+{c:4,n:"88",lv:3,q:"基于 Flink + Iceberg 从零搭一套实时湖仓，整体方案怎么讲？",a:"我会给一个端到端框架：采集层（Flink CDC 收 MySQL/Kafka）→ 计算层（Flink SQL 做清洗/宽表，分区/桶设计）→ 表格式层（Iceberg + catalog，配 compaction/clustering）→ 查询层（Trino 即席 + Spark 批）→ 应用层（指标进 OLAP/报表）。同时强调配套：监控（背压/延迟/对账）、元数据、权限。回答套路的加分点是“先画层再讲每层怎么传参数与兜底”。"},
+
+{c:5,n:"89",lv:3,q:"实时任务内存与 GC 怎么调优？",a:"先定位是堆外（RocksDB）还是堆内（普通 state、Flink buffer）。堆内大一律调 state 的保留和 TTL；RockDB 调 write buffer、block cache、压缩；还配 Network buffer 参数和堆 /堆外比例。GC 长则看对象释放和 state 设计。我会给“先监控后调参”的路线：压测观察 GC 曲线，再动参数，避免拍脑袋。"},
+{c:5,n:"90",lv:3,q:"大状态场景为什么选 RocksDB？怎么调？",a:"RocksDB 把状态存磁盘（LSM），能处理远超内存的状态，内存只留缓存。调优点：write buffer（增大减少刷盘）、block cache、compaction 策略、以及 checkpoint 传 Cd（incremental 增量 checkpoint 减少快照量）。我会强调“RocksDB 内存受控 + 可离线恢复”，是超大规模状态的现实选择。"},
+{c:5,n:"91",lv:3,q:"如何判断并解决小文件堆积？",a:"判定：文件数量/分区超过目标、查询元数据明显变慢、对象存储请求数上升。解决：调大每个 flush 的文件大小目标、降低提交频率（合并 checkpoint）、开 compaction/clustering 定期合并、以及按分区做一次性清理。我强调“小文件是增量式恶化”，要设计成由表服务和指标监控自动兜底，别等人发现。"},
+{c:5,n:"92",lv:3,q:"数据倾斜（热点 key）实时场景怎么彻底解决？",a:"复合手段：加盐/局部聚合拆解热 key；双流 join 用轮询拆散倾斜的重 key；对维表热 key 做独立任务 + 聚合后合并；以及降维法（尽量把 join 换成预聚合/宽表）。我常强调“先量倾斜度，再对症”，且倾斜常伴“少数 key 撑爆单并行”，扩大并行解决不了，一定要拆分 key 维度。"},
+{c:5,n:"93",lv:3,q:"DWH 数据质量的口径统一怎么做？",a:"口径统一靠：统一指标定义库（指标+维度+计算方式文档化）、多层指标用同一算子/函数、用“口径基准表”做每层对账、以及指标变更走评审。实时链路口径则以“离线为锚、实时对齐”或“以实时为基准维护”。我答：口径治理是“规范 + 工具 + 对账”三件套，缺一不可。"},
+{c:5,n:"94",lv:3,q:"Flink 的增量 checkpoint（incremental）有什么用？",a:"增量 checkpoint 只提交 changed 的状态块，大幅减少快照的传输和存储开销，是超大状态（如 RocksDB）能频繁 checkpoint 保持低延迟的关键。我强调：超大状态 + 频繁快照 = 阻塞风险，增量是标配，配合保留策略/最小间隔一起调。"},
+{c:5,n:"95",lv:3,q:"实时任务的「启动/动态调整并行度」可行吗？",a:"能不能改并行度要分算子：无状态（Source/简单 Map）可随 scale-in/out 调整；keyed 聚合类要实现 Rescale 支持且会导致 state 重分布成本高。实操常用“保存状态 + 按新并行度重放”或干脆重启。我会答：动态扩缩是加分但别滥用，生产常配合 Savepoint 做受控升级。"},
+{c:5,n:"96",lv:3,q:"实时链路故障演练怎么做？",a:"演练按“故障注入 + 观察 + 恢复”做：注入如 kill TaskManager、断下游、慢外部、超大延迟；观察 checkpoint 成败、背压、延迟、对账差异；验证自动恢复与降级；最后复盘指标和短板。我的观点：实时系统比离线更脆弱，演练是“用低风险验证高风险恢复”的必要投入。"},
+{c:5,n:"97",lv:3,q:"湖仓表格式的「版本保留 / 快照过期」怎么配置？",a:"每个表格式都支持“保留最近 N 个快照 / 保留 N 天”，如 Iceberg 的 expire snapshots、Hudi 的 timeline retention。保留策略是“时间旅行能力 vs 元数据膨胀”的平衡。我会说：生产要设自动清理任务按策略定期跑，同时为关键表留长一点以便审计复盘。"},
+{c:5,n:"98",lv:3,q:"实时湖仓落地的前置条件 / 选型标准是什么？",a:"我会答四问：一、业务需不需要低延迟+回溯+多引擎共享（有才值得）；二、数据规模和增长是否匹配对象存储；三、团队有无实时能力（Flink/流式）；四、对一致性与运维 SLA 的容忍度。选型看“使用频率、多写者、upsert 强度、生态”，最终给一批可验证的压测和 PoC。我强调“先业务后技术，先 PoC 再全面铺开”。"},
+{c:5,n:"99",lv:3,q:"湖仓一体未来趋势你怎么看？",a:"我看到三条：一是“流批真一体 + 智能运维”让实时离线更无感；二是统一表格式成为事实标准，多引擎、元数据统一，数据自动治理；三是和 AI 深度融合（特征、数据编排、自动优化）。同时对象存储 + 湖仓会成为企业数据底座。我的看法：技术收敛到“少而精的表格式 + 强大计算平台”，工程师重心转向“数据治理与智能优化”。"},
+{c:5,n:"100",lv:3,q:"开放题：给你一个电商下单场景，如何设计实时湖仓方案？（给思路）",a:"我会按层展开：采集（订单/库存 binlog + Kafka 事件）→ 计算（Flink SQL 做清洗、主键去重、生成实时宽表，落 Iceberg 湖表）→ 建模（ODS 订单原始、DWD 明细宽表、DWS 按小时/天下单聚合）→ 查询（Spark 批重算、Trino 即席，指标进 OLAP）→ 兜底（对账、水温监控、幂等 upsert、Savepoint 恢复 + 离线对照）。再加一个关键论证：为什么这套比 Kafka+ClickHouse 更利于回溯成本控制和多引擎共享。这样的回答既完整又体现工程判断。"}
+];
+
+const CATS = [
+  {id:0,name:"湖仓基础与概念",num:12},
+  {id:1,name:"实时计算基础 · Flink",num:18},
+  {id:2,name:"存储引擎 Iceberg / Hudi / Delta",num:20},
+  {id:3,name:"实时数仓与流式读写",num:20},
+  {id:4,name:"一致性 · 生态 · 治理",num:18},
+  {id:5,name:"性能优化 · 生产实践",num:12}
+];
+
+const NUM_COLORS=[
+  "linear-gradient(135deg,#4f8bff,#7c5cff)",
+  "linear-gradient(135deg,#20b8d6,#4f8bff)",
+  "linear-gradient(135deg,#7c5cff,#b06bff)",
+  "linear-gradient(135deg,#22c7a8,#3dd6a0)",
+  "linear-gradient(135deg,#ffb547,#ff8a6b)",
+  "linear-gradient(135deg,#ff6b9d,#ff8ac2)"
+];
+
+let state = {search:"",cats:new Set([0,1,2,3,4,5]),lvls:new Set([1,2,3])};
+
+function toggleLvl(l){
+  const el=document.querySelector(`.chip-l[data-l="${l}"]`);
+  if(state.lvls.has(l)){state.lvls.delete(l);el.classList.remove("active");}
+  else{state.lvls.add(l);el.classList.add("active");}
+  render();
+}
+function toggleCat(i){
+  const el=document.querySelector(`#catChips .chip[data-i="${i}"]`);
+  if(state.cats.has(i)){state.cats.delete(i);el.classList.remove("active");}
+  else{state.cats.add(i);el.classList.add("active");}
+  render();
+}
+function toggleCard(card){
+  card.classList.toggle("open");
+}
+
+function render(){
+  const kw=state.search.trim().toLowerCase();
+  const items=DATA.filter(d=>state.cats.has(d.c)&&state.lvls.has(d.lv)&&
+    (!kw || (d.q+d.a).toLowerCase().includes(kw)));
+  document.getElementById("resultCount").textContent=`显示 ${items.length} / ${DATA.length} 题`;
+  const byCat={};
+  items.forEach(d=>{ (byCat[d.c]=byCat[d.c]||[]).push(d); });
+
+  const content=document.getElementById("content");
+  content.innerHTML="";
+  CATS.forEach((cat,ci)=>{
+    const list=byCat[cat.id];
+    if(!list) return;
+    const sec=document.createElement("section");
+    const label=document.createElement("div");
+    label.className="cat-label";
+    label.innerHTML=`<span class="cat-tag">${cat.name}</span><span style="font-size:12px;font-weight:600;color:var(--ink-soft)">${cat.num}题 · 本视图 ${list.length} 题</span>`;
+    sec.appendChild(label);
+    const grid=document.createElement("div");
+    grid.className="cards";
+    list.forEach((d,idx)=>{
+      const levelMap={1:"初级",2:"中级",3:"高级"};
+      const card=document.createElement("div");
+      card.className="card";
+      card.innerHTML=`
+        <div class="q-head" onclick="toggleCard(this.parentElement)">
+          <div class="q-num" style="background:${NUM_COLORS[d.c]}">${String(idx+1).padStart(2,"0")}</div>
+          <div class="q-ttl">
+            <div class="q-meta"><span class="lvl l${d.lv}">${levelMap[d.lv]}</span><span style="font-size:11px;color:var(--ink-soft)">${CATS[d.c].name}</span></div>
+            <div class="q-text">${d.q}</div>
+          </div>
+          <div class="arrow">▾</div>
+        </div>
+        <div class="a-wrap"><div class="a-body">${d.a}</div></div>`;
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+    content.appendChild(sec);
+  });
+}
+
+// 初始化分类 chips
+(function initChips(){
+  const wrap=document.getElementById("catChips");
+  CATS.forEach(cat=>{
+    const el=document.createElement("span");
+    el.className="chip active";el.dataset.i=cat.id;
+    el.textContent=cat.name;
+    el.onclick=()=>toggleCat(cat.id);
+    wrap.appendChild(el);
+  });
+  document.querySelectorAll(".chip-l.c1").forEach(el=>el.classList.add("active"));
+  document.querySelectorAll(".chip-l.c2").forEach(el=>el.classList.add("active"));
+  document.querySelectorAll(".chip-l.c3").forEach(el=>el.classList.add("active"));
+  document.getElementById("search").addEventListener("input",e=>{state.search=e.target.value;render();});
+  render();
+})();
+</script>
+</body>
+</html>
