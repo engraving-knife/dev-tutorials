@@ -33,6 +33,9 @@ public class TokenAuthenticator extends Authenticator {
     /** 查询参数携带令牌的键名 */
     private static final String TOKEN_PARAM = "token";
 
+    /** Cookie 携带令牌的键名：与 HtmlContentHandler 写入的 Set-Cookie 保持一致 */
+    private static final String TOKEN_COOKIE = "htmlmonitor_token";
+
     /** 认证主体会话中的用户名，仅用于构造 Success 结果，不参与鉴权判断 */
     private static final String PRINCIPAL_USER = "authorized-machine";
 
@@ -78,17 +81,41 @@ public class TokenAuthenticator extends Authenticator {
             return header.trim();
         }
         String query = exchange.getRequestURI().getRawQuery();
-        if (query == null || query.isEmpty()) {
+        if (query != null && !query.isEmpty()) {
+            for (String pair : query.split("&")) {
+                int idx = pair.indexOf('=');
+                if (idx <= 0) {
+                    continue;
+                }
+                String key = pair.substring(0, idx);
+                if (TOKEN_PARAM.equals(key)) {
+                    return URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
+                }
+            }
+        }
+        // 兜底：已认证的 HTML 页面通过 Cookie 把令牌带给其中的子资源(css/js/字体/图片)
+        // 与站内链接，使页面内部的每次请求都能自动通过认证
+        return parseCookie(exchange);
+    }
+
+    /**
+     * 从请求头 Cookie 中解析令牌。
+     *
+     * @param exchange 当前 HTTP 交换上下文
+     * @return 令牌值，未携带时不返回 null
+     */
+    private String parseCookie(HttpExchange exchange) {
+        String header = exchange.getRequestHeaders().getFirst("Cookie");
+        if (header == null || header.isEmpty()) {
             return null;
         }
-        for (String pair : query.split("&")) {
+        for (String pair : header.split(";")) {
             int idx = pair.indexOf('=');
             if (idx <= 0) {
                 continue;
             }
-            String key = pair.substring(0, idx);
-            if (TOKEN_PARAM.equals(key)) {
-                return URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
+            if (TOKEN_COOKIE.equals(pair.substring(0, idx).trim())) {
+                return pair.substring(idx + 1).trim();
             }
         }
         return null;

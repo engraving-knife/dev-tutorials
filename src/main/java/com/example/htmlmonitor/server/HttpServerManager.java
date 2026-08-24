@@ -57,7 +57,7 @@ public class HttpServerManager {
         // 目录树数据接口：前端据此渲染目录结构
         server.createContext("/api/files", new ApiHandler(index)).setAuthenticator(auth);
         // 原 HTML 内容接口：点击前端目录中的文件后，从这里加载本地 HTML 原样展示
-        server.createContext("/html", new HtmlContentHandler(config.getMonitorDir())).setAuthenticator(auth);
+        server.createContext("/html", new HtmlContentHandler(config.getMonitorDir(), config)).setAuthenticator(auth);
         // 前端页面
         server.createContext("/", new StaticHandler()).setAuthenticator(auth);
 

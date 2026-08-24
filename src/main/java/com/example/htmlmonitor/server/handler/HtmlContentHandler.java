@@ -1,5 +1,7 @@
 package com.example.htmlmonitor.server.handler;
 
+import com.example.htmlmonitor.config.ServerConfig;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -35,8 +37,19 @@ public class HtmlContentHandler implements HttpHandler {
     /** 监控根目录（绝对路径、已 normalize） */
     private final Path monitorRoot;
 
-    public HtmlContentHandler(Path monitorRoot) {
+    /** 认证开关：关闭认证时不再写入 Cookie */
+    private final boolean authEnabled;
+
+    /** 机器认证令牌，写入 Cookie 供页内请求自动携带 */
+    private final String authToken;
+
+    /** Cookie 携带令牌的键名：与 TokenAuthenticator 解析的 Cookie 保持一致 */
+    private static final String TOKEN_COOKIE = "htmlmonitor_token";
+
+    public HtmlContentHandler(Path monitorRoot, ServerConfig config) {
         this.monitorRoot = monitorRoot.toAbsolutePath().normalize();
+        this.authEnabled = config.isAuthEnabled();
+        this.authToken = config.getAuthToken();
     }
 
     @Override
@@ -64,7 +77,16 @@ public class HtmlContentHandler implements HttpHandler {
         }
 
         byte[] content = Files.readAllBytes(file);
-        String contentType = resolveContentType(file.getFileName().toString(), content);
+        String fileName = file.getFileName().toString();
+        String contentType = resolveContentType(fileName, content);
+        // 认证开启时，给 HTML 文档写入令牌 Cookie：页面内引用的 css/js/字体/图片等
+        // 子资源以及站内链接属于独立的浏览器请求，无法继承地址栏里的 ?token=，
+        // 通过本机 Cookie 自动携带令牌，才能避免这些内部请求被 401 拦截
+        String lowerName = fileName.toLowerCase(Locale.ROOT);
+        if (authEnabled && (lowerName.endsWith(".html") || lowerName.endsWith(".htm"))) {
+            exchange.getResponseHeaders().set("Set-Cookie",
+                    TOKEN_COOKIE + "=" + authToken + "; Path=/; SameSite=Lax; HttpOnly");
+        }
         exchange.getResponseHeaders().set("Content-Type", contentType);
         exchange.sendResponseHeaders(200, content.length);
         try (OutputStream os = exchange.getResponseBody()) {
